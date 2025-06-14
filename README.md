@@ -181,7 +181,7 @@ overnight-mvp/
 ### Quick Start
 1. **Clone this repository**
    ```bash
-   git clone https://github.com/your-org/overnight-mvp.git
+   git clone https://github.com/Flying-Pig-Labs/overnight-mvp.git
    cd overnight-mvp
    ```
 
@@ -250,8 +250,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ by the Flying Pig Labs**
 
-[![GitHub stars](https://img.shields.io/github/stars/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/your-org/overnight-mvp)
-[![GitHub forks](https://img.shields.io/github/forks/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/your-org/overnight-mvp)
-[![GitHub issues](https://img.shields.io/github/issues/Flying-Pig-Labs/overnight-mvp)](https://github.com/your-org/overnight-mvp/issues)
+[![GitHub stars](https://img.shields.io/github/stars/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/Flying-Pig-Labs/overnight-mvp)
+[![GitHub forks](https://img.shields.io/github/forks/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/Flying-Pig-Labs/overnight-mvp)
+[![GitHub issues](https://img.shields.io/github/issues/Flying-Pig-Labs/overnight-mvp)](https://github.com/Flying-Pig-Labs/overnight-mvp/issues)
 
 </div>
