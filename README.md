@@ -250,8 +250,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ by the Flying Pig Labs**
 
-[![GitHub stars](https://img.shields.io/github/stars/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/Flying-Pig-Labs/overnight-mvp)
-[![GitHub forks](https://img.shields.io/github/forks/Flying-Pig-Labs/overnight-mvp?style=social)](https://github.com/Flying-Pig-Labs/overnight-mvp)
-[![GitHub issues](https://img.shields.io/github/issues/Flying-Pig-Labs/overnight-mvp)](https://github.com/Flying-Pig-Labs/overnight-mvp/issues)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Flying-Pig-Labs/overnight-mvp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Made with Love](https://img.shields.io/badge/Made%20with-Love-red.svg?style=for-the-badge)](https://github.com/Flying-Pig-Labs/overnight-mvp)
+
+*Star this repo when it goes live! ⭐*
 
 </div>
