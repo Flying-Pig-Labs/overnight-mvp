@@ -1,0 +1,41 @@
+app:
+  name: MyApp
+  description: Brief app summary
+  framework: react
+  routing: react-router-dom
+
+styleTokens:
+  primaryColor: "#0066FF"
+  spacing: "8px"
+  fontFamily: "Inter"
+
+pages:
+  - name: HomePage
+    path: "/"
+    layout: grid
+    components:
+      - Header
+      - Hero
+
+components:
+  - name: Hero
+    props:
+      title: string
+      subtitle: string
+    variants:
+      - default
+      - withImage
+
+interactions:
+  - trigger: Hero.ctaButton.onClick
+    action: POST /contact
+
+dataSources:
+  - name: ContactAPI
+    type: REST
+    endpoint: POST /contact
+
+dataBindings:
+  - component: Hero
+    bindsProp: email
+    to: ContactAPI.submit 
