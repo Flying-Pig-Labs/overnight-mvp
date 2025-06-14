@@ -1,33 +1,57 @@
-# Prompt: Generate Backend Implementation Prompt from Backend Spec
+# Prompt: Generate Backend Implementation with AWS Q Developer CLI
 
 You are given a `backend-spec.json` that defines the full shape of required backend services and routes.
 
-Write a clear, production-ready AI prompt to implement this backend stack using AWS-native services. Assume AWS CDK with TypeScript and follow best practices.
+Your job is to convert this structured specification into a natural language prompt that can be used with AWS Q Developer CLI to automatically generate and deploy the complete backend infrastructure.
 
 ## Tasks
 
-* For each service and route, generate:
-  * CDK infrastructure (API Gateway route + Lambda)
-  * Lambda handler code stub
-  * Input validation (zod or native)
-  * CORS and API config
-  * IAM permissions if needed (e.g. write to DynamoDB)
+* Convert the backend-spec.json into a clear, natural language description
+* Include all required endpoints, methods, and data structures
+* Specify the desired technology stack (CDK + TypeScript, Lambda + Python)
+* Add requirements for security, validation, and best practices
+* Format the prompt for optimal Q CLI understanding
 
 ## Output
 
-Return a single AI prompt that says:
+Generate a Q CLI prompt like:
 
-> Build an AWS backend using CDK (TypeScript). It will deploy an API Gateway + Lambda-based REST API. Implement the following:
->
-> **ContactService**:
->
-> * `POST /contact` accepts JSON `{ name, email, message }` and returns a thank-you response.
->
-> Create:
->
-> * CDK stack with API Gateway + Lambda
-> * Lambda code to parse input and log it
-> * CORS enabled for all origins
-> * IAM role with basic execution permissions
+```
+I want to build a serverless application with an API Gateway that has the following endpoints:
 
-Repeat the above for each route in the backend spec. 
+1. POST /contact
+   - Accepts JSON payload: {name: string, email: string, message: string}
+   - Returns: {success: boolean, message: string}
+   - Purpose: Submit contact form
+
+2. GET /user
+   - Accepts: No payload
+   - Returns: {id: string, name: string, email: string}
+   - Purpose: Get current user profile
+
+3. POST /auth/login
+   - Accepts: {email: string, password: string}
+   - Returns: {token: string, user: object}
+   - Purpose: User authentication
+
+I want to build the AWS infrastructure using CDK in TypeScript and Lambda functions in Python.
+Include proper CORS configuration for frontend integration, input validation, error handling, and security best practices.
+Generate comprehensive documentation and OpenAPI specification.
+```
+
+## Q CLI Integration Benefits
+
+* **Automated Generation**: Q CLI creates all CDK infrastructure code
+* **Best Practices**: Built-in security, validation, and error handling
+* **Rapid Deployment**: Complete backend deployed in minutes
+* **Consistent Architecture**: Follows AWS recommended patterns
+* **Documentation**: Auto-generated OpenAPI specs and deployment guides
+
+## Usage Instructions
+
+1. Generate the Q CLI prompt from backend-spec.json
+2. Run `q chat` in terminal
+3. Paste the generated prompt
+4. Follow Q CLI's interactive deployment process
+5. Extract generated OpenAPI spec and endpoint URLs
+6. Update frontend with real API endpoints 

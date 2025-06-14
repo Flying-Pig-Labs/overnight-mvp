@@ -4,6 +4,7 @@
 
 ### 1. Set Up Development Environment
 - [ ] **Install AWS CDK CLI** and configure AWS credentials
+- [ ] **Install AWS Q Developer CLI** for automated backend generation
 - [ ] **Create base CDK project structure**:
   ```bash
   mkdir -p lib bin .github/workflows
@@ -85,11 +86,12 @@
 - [ ] **Build service grouping logic**
 - [ ] **Generate backend-spec.json** automatically
 
-### 8. Backend Implementation
-- [ ] **Implement `5-backend-implementation-prompt.md`** as CDK generator
-- [ ] **Create Lambda function templates**
-- [ ] **Build API Gateway configuration**
-- [ ] **Generate CORS and validation setup**
+### 8. Backend Implementation with Q CLI
+- [ ] **Implement `5-backend-implementation-prompt.md`** as Q CLI prompt generator
+- [ ] **Create backend-spec to Q CLI prompt converter**
+- [ ] **Test Q CLI backend generation** with sample specs
+- [ ] **Automate Q CLI deployment process**
+- [ ] **Extract OpenAPI specs** from generated backends
 
 ## 🚀 Production Readiness
 
@@ -120,10 +122,10 @@
 3. **Day 21-24**: Create backend spec extractor
 4. **Day 25-28**: Test with real Lovable.dev output
 
-### Phase 3: Backend Automation (Week 5-6)
-1. **Day 29-31**: Implement Lambda function generator
-2. **Day 32-35**: Create API Gateway automation
-3. **Day 36-38**: Add CORS and validation
+### Phase 3: Q CLI Backend Automation (Week 5-6)
+1. **Day 29-31**: Implement Q CLI prompt generator
+2. **Day 32-35**: Test Q CLI backend generation
+3. **Day 36-38**: Automate Q CLI deployment process
 4. **Day 39-42**: Test full pipeline end-to-end
 
 ### Phase 4: Production Features (Week 7-8)
@@ -143,6 +145,7 @@
 ### Development Tools
 - [ ] **Frontend analysis**: Custom parser vs existing tools
 - [ ] **Code generation**: Template-based vs AST manipulation
+- [ ] **Backend generation**: AWS Q CLI vs manual implementation
 - [ ] **Testing framework**: Jest + Playwright for E2E
 - [ ] **CI/CD**: GitHub Actions vs AWS CodePipeline
 
@@ -157,7 +160,7 @@
 ### Technical Metrics
 - [ ] **Deployment time**: < 5 minutes for full stack
 - [ ] **Frontend analysis**: < 30 seconds for typical app
-- [ ] **Backend generation**: < 2 minutes for complete API
+- [ ] **Backend generation**: < 2 minutes for complete API (Q CLI)
 - [ ] **Uptime**: 99.9% availability target
 
 ### Business Metrics
@@ -191,7 +194,7 @@
 ### Technical Risks
 - [ ] **CDK complexity**: Start with simple stacks, iterate
 - [ ] **Frontend analysis accuracy**: Test with diverse codebases
-- [ ] **Backend generation quality**: Validate with real-world APIs
+- [ ] **Q CLI reliability**: Have fallback to manual implementation
 - [ ] **Deployment reliability**: Implement rollback mechanisms
 
 ### Business Risks
@@ -204,9 +207,9 @@
 
 ### This Week
 1. **Set up CDK development environment**
-2. **Create basic FrontendStack implementation**
-3. **Test with a simple static site**
-4. **Document any blockers or questions**
+2. **Install and test AWS Q Developer CLI**
+3. **Create basic FrontendStack implementation**
+4. **Test Q CLI with simple backend generation**
 
 ### Next Week
 1. **Implement GitHub Actions workflow**
@@ -216,7 +219,7 @@
 
 ### Following Weeks
 1. **Complete analysis pipeline**
-2. **Implement backend generation**
+2. **Implement Q CLI backend generation**
 3. **Add production features**
 4. **Performance optimization**
 
