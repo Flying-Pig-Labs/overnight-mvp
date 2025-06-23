@@ -55,4 +55,4 @@ styleTokens:
 2. Enhanced by `make lovable` 
 3. Used by Lovable.dev for frontend generation
 
-See [example-mvp-spec.yaml](example-mvp-spec.yaml) for complete reference.
+See [example-mvp-spec.yaml](../templates/example-mvp-spec.yaml) for complete reference.

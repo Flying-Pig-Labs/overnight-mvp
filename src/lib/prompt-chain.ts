@@ -101,7 +101,7 @@ export const workflowSteps: PromptStep[] = [
   {
     id: 'mvpSpec',
     name: 'Generate MVP Specification',
-    promptFile: '3-populate-frontspec-prompt.md',
+    promptFile: 'prompts/3-populate-frontspec-prompt.md',
     inputTransform: (input) => ({
       userDescription: input.description,
       template: input.frontspecTemplate
@@ -120,7 +120,7 @@ export const workflowSteps: PromptStep[] = [
   {
     id: 'frontendAnalysis',
     name: 'Analyze Frontend Requirements',
-    promptFile: '3-populate-frontspec-prompt.md',
+    promptFile: 'prompts/3-populate-frontspec-prompt.md',
     inputTransform: (input) => ({
       frontendCode: input.frontendCode,
       mvpSpec: input.mvpSpecResult
@@ -136,7 +136,7 @@ export const workflowSteps: PromptStep[] = [
   {
     id: 'backendSpec',
     name: 'Generate Backend Specification',
-    promptFile: '4-backend-spec-prompt.md',
+    promptFile: 'prompts/4-backend-spec-prompt.md',
     inputTransform: (input) => ({
       frontendAnalysis: input.frontendAnalysisResult,
       mvpSpec: input.mvpSpecResult

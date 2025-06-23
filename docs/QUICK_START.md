@@ -49,5 +49,5 @@ Your app is live at `https://your-app.cloudfront.net`
 ### 📚 Next Steps
 
 - Read [CLI Reference](CLI_REFERENCE.md) for all commands
-- Check [example-mvp-spec.yaml](example-mvp-spec.yaml) for inspiration
+- Check [example-mvp-spec.yaml](../templates/example-mvp-spec.yaml) for inspiration
 - Join our [Discord](https://discord.gg/overnight-mvp) for help

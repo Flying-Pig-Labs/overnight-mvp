@@ -93,7 +93,7 @@ mvp: build
 # Run example workflow
 run: build
 	@echo "🏃 Running example MVP workflow..."
-	AWS_PROFILE=personal ./dist/cli.js run example-mvp-spec.yaml --dry-run
+	AWS_PROFILE=personal ./dist/cli.js run templates/example-mvp-spec.yaml --dry-run
 
 # Analyze example frontend
 analyze: build
@@ -112,8 +112,8 @@ deploy: build
 # Create GitHub issues
 issues:
 	@echo "📋 Creating GitHub issues..."
-	@chmod +x create_issues.sh
-	./create_issues.sh
+	@chmod +x .github/create_issues.sh
+	./.github/create_issues.sh
 
 # Generate frontend with interactive prompts
 frontend: build
@@ -219,7 +219,7 @@ dev-mvp:
 	AWS_PROFILE=personal npm run dev -- chat
 
 dev-run:
-	AWS_PROFILE=personal npm run dev -- run example-mvp-spec.yaml
+	AWS_PROFILE=personal npm run dev -- run templates/example-mvp-spec.yaml
 
 dev-analyze:
 	AWS_PROFILE=personal npm run dev -- analyze ./frontend
