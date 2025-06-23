@@ -20,7 +20,7 @@ make build
 # Create your MVP
 make mvp                                     # Describe your idea interactively
 make frontend                                # Generate frontend implementation
-make backend SPEC=bigspec.yaml               # Generate backend implementation
+make backend                                 # Generate backend implementation
 make s3-site REPO=github.com/you/your-app   # Deploy to AWS
 ```
 
@@ -41,14 +41,14 @@ Interactive session to capture your requirements → `mvpspec.yml`
 
 ### 2️⃣ Generate Frontend
 ```bash
-make frontend SPEC=mvpspec.yml
+make frontend
 # Or: overnight-mvp frontend mvpspec.yml -o frontend-prompt.txt
 ```
 Interactive design session + implementation prompt → `frontend-prompt.txt`
 
 ### 3️⃣ Generate Backend
 ```bash
-make backend SPEC=mvpspec.yml
+make backend
 # Or: overnight-mvp backend mvpspec.yml -o backend-prompt.txt
 ```
 AWS Lambda + DynamoDB implementation → `backend-prompt.txt`
@@ -78,7 +78,7 @@ make setup-aws  # Verify AWS access
 |---------|---------|
 | `make mvp` | Start interactive MVP builder |
 | `make frontend` | Generate frontend implementation |
-| `make backend SPEC=file` | Generate backend implementation |
+| `make backend` | Generate backend implementation |
 | `make s3-site REPO=url` | Generate AWS deployment |
 | `make example` | Create example MVP with all specs |
 | `make help` | Show all commands |
@@ -116,11 +116,11 @@ make mvp
 # Review and edit the generated mvpspec.yml file
 
 # 2. Generate frontend
-make frontend SPEC=mvpspec.yml
+make frontend
 # → Interactive design session, then copy prompt to Claude Code
 
 # 3. Generate backend
-make backend SPEC=mvpspec.yml
+make backend
 # → Copy prompt to Claude Code for AWS Lambda implementation
 
 # 4. Deploy
