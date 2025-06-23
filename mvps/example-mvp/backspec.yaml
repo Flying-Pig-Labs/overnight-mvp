@@ -1,0 +1,108 @@
+name: Task Tracker Backend
+architecture: Serverless (Lambda + DynamoDB + API Gateway)
+runtime: Node.js 20.x
+database:
+  type: DynamoDB
+  tables:
+    - name: Tasks
+      partition_key: userId
+      sort_key: taskId
+      attributes:
+        - "title: string"
+        - "description: string"
+        - "completed: boolean"
+        - "priority: string"
+        - "dueDate: string"
+        - "createdAt: timestamp"
+        - "updatedAt: timestamp"
+      indexes:
+        - name: CategoryIndex
+          partition_key: categoryId
+          sort_key: createdAt
+        - name: StatusIndex
+          partition_key: completed
+          sort_key: dueDate
+    - name: Categories
+      partition_key: userId
+      sort_key: categoryId
+      attributes:
+        - "name: string"
+        - "color: string"
+        - "icon: string"
+        - "createdAt: timestamp"
+      indexes: []
+lambdas:
+  - name: CreateTask
+    handler: handlers/tasks.createTask
+    method: POST
+    path: /tasks
+    description: Create a new task
+    environment:
+      TABLE_NAME: Tasks
+  - name: ListTasks
+    handler: handlers/tasks.listTasks
+    method: GET
+    path: /tasks
+    description: List all tasks with optional filtering
+    environment:
+      TABLE_NAME: Tasks
+  - name: GetTask
+    handler: handlers/tasks.getTask
+    method: GET
+    path: /tasks/{id}
+    description: Get a specific task
+    environment:
+      TABLE_NAME: Tasks
+  - name: UpdateTask
+    handler: handlers/tasks.updateTask
+    method: PUT
+    path: /tasks/{id}
+    description: Update a task
+    environment:
+      TABLE_NAME: Tasks
+  - name: DeleteTask
+    handler: handlers/tasks.deleteTask
+    method: DELETE
+    path: /tasks/{id}
+    description: Delete a task
+    environment:
+      TABLE_NAME: Tasks
+  - name: ListCategories
+    handler: handlers/categories.listCategories
+    method: GET
+    path: /categories
+    description: List all categories
+    environment:
+      TABLE_NAME: Categories
+  - name: CreateCategory
+    handler: handlers/categories.createCategory
+    method: POST
+    path: /categories
+    description: Create a new category
+    environment:
+      TABLE_NAME: Categories
+  - name: UpdateCategory
+    handler: handlers/categories.updateCategory
+    method: PUT
+    path: /categories/{id}
+    description: Update a category
+    environment:
+      TABLE_NAME: Categories
+  - name: DeleteCategory
+    handler: handlers/categories.deleteCategory
+    method: DELETE
+    path: /categories/{id}
+    description: Delete a category
+    environment:
+      TABLE_NAME: Categories
+api_gateway:
+  type: REST
+  cors: true
+  authorization: API Key
+  throttling:
+    rate_limit: 1000
+    burst_limit: 2000
+infrastructure:
+  iac: AWS SAM
+  monitoring: CloudWatch
+  tracing: X-Ray

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { chatCommand } from './commands/chat.js';
+import { mvpCommand } from './commands/mvp.js';
 import { runCommand } from './commands/run.js';
 import { analyzeCommand } from './commands/analyze.js';
 import { deployCommand } from './commands/deploy.js';
 import { lovableCommand } from './commands/lovable.js';
 import { s3SiteCommand } from './commands/s3-site.js';
+import { frontendCommand } from './commands/frontend.js';
+import { backendCommand } from './commands/backend.js';
+import { exampleCommand } from './commands/example.js';
 
 const program = new Command();
 
@@ -16,11 +19,19 @@ program
   .version('1.0.0');
 
 program
-  .command('chat')
-  .description('Start an interactive chat session to describe your MVP')
-  .option('-o, --output <file>', 'Save the MVP specification to a file', 'mvp-spec.yaml')
+  .command('mvp')
+  .description('Start an interactive MVP builder session')
+  .option('-o, --output <file>', 'Save the MVP specification to a file')
   .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
-  .action(chatCommand);
+  .action(mvpCommand);
+
+// Keep 'chat' as an alias for backward compatibility
+program
+  .command('chat')
+  .description('(Alias for mvp) Start an interactive MVP builder session')
+  .option('-o, --output <file>', 'Save the MVP specification to a file')
+  .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .action(mvpCommand);
 
 program
   .command('run')
@@ -63,15 +74,37 @@ program
   .option('--copy', 'Copy the prompt to clipboard')
   .action(s3SiteCommand);
 
+program
+  .command('frontend')
+  .description('Generate frontend implementation prompt with interactive design session')
+  .argument('<spec>', 'Path to the bigspec.yaml file')
+  .option('-o, --output <file>', 'Save the prompt to a file')
+  .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .action(frontendCommand);
+
+program
+  .command('backend')
+  .description('Generate backend implementation prompt for AWS Lambda + DynamoDB')
+  .argument('<spec>', 'Path to the bigspec.yaml file')
+  .option('-o, --output <file>', 'Save the prompt to a file')
+  .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .action(backendCommand);
+
+program
+  .command('example')
+  .description('Generate example MVP with all specifications and prompts')
+  .option('--output-dir <dir>', 'Output directory for example files', 'mvps/example-mvp')
+  .action(exampleCommand);
+
 program.addHelpText('after', `
 ${chalk.bold('Examples:')}
-  $ overnight-mvp chat                    # Start interactive MVP builder
+  $ overnight-mvp mvp                     # Start interactive MVP builder
   $ overnight-mvp run mvp-spec.yaml       # Run complete workflow
   $ overnight-mvp analyze ./frontend      # Extract API requirements
   $ overnight-mvp deploy ./my-project     # Deploy to AWS
 
 ${chalk.bold('Workflow Steps:')}
-  1. ${chalk.cyan('Chat')} - Describe your MVP idea in natural language
+  1. ${chalk.cyan('MVP')} - Describe your MVP idea in natural language
   2. ${chalk.cyan('Generate')} - Create frontend with Lovable.dev
   3. ${chalk.cyan('Analyze')} - Extract API requirements from frontend
   4. ${chalk.cyan('Build')} - Generate backend with AWS Q Developer

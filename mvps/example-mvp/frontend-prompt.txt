@@ -1,0 +1,164 @@
+# Task Tracker MVP - Frontend Implementation
+
+Create a modern, responsive task tracking application with the following specifications:
+
+## Project Overview
+A simple task tracking application for personal productivity
+
+## Design Requirements
+
+### Visual Design & Feel
+- **Vibe**: clean and professional
+- **Emotions**: Users should feel focused, accomplished, organized
+- **Style**: Minimal & Clean
+- **Color Scheme**: blue primary with neutral grays
+- **Target Audience**: Productivity-focused individuals
+
+### Interactions & Animations
+- Smooth animations and transitions throughout
+- Micro-interactions on all interactive elements
+- **Interface Complexity**: balanced
+
+## Technical Stack
+- **Framework**: React with TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **Build Tool**: Vite
+- **Type Safety**: TypeScript with strict mode
+
+## Features to Implement
+
+### Task Management
+Create, read, update, and delete tasks
+
+**API Endpoints:**
+- POST /tasks - Create a new task
+- GET /tasks - List all tasks with optional filtering
+- GET /tasks/{id} - Get a specific task
+- PUT /tasks/{id} - Update a task
+- DELETE /tasks/{id} - Delete a task
+
+### Task Categories
+Organize tasks by categories
+
+**API Endpoints:**
+- GET /categories - List all categories
+- POST /categories - Create a new category
+- PUT /categories/{id} - Update a category
+- DELETE /categories/{id} - Delete a category
+
+## Pages & Routes
+
+- **Dashboard** (/): Overview with task statistics and quick actions
+- **Tasks** (/tasks): Complete task list with filtering and sorting
+- **Task Detail** (/tasks/:id): Detailed view and edit form for a single task
+- **Categories** (/categories): Manage task categories
+- **Settings** (/settings): User preferences and app settings
+
+## Components Structure
+
+### Container Components
+- **TaskList**: Displays tasks with filtering and sorting options
+
+### Display Components
+- **TaskCard**: Individual task display with quick actions
+- **StatsWidget**: Shows task completion statistics
+
+### Form Components
+- **TaskForm**: Create and edit tasks
+
+### Input Components
+- **CategoryPicker**: Select or create categories
+
+### Control Components
+- **FilterBar**: Filter tasks by status, category, date
+
+### Layout Components
+- **Header**: App header with navigation and user menu
+- **Sidebar**: Navigation sidebar with category list
+
+## State Management
+
+Using Zustand for state management with the following stores:
+
+### taskStore
+- State: tasks, filters, sorting, loading
+- Actions: fetchTasks, createTask, updateTask, deleteTask, setFilter, setSorting
+
+### categoryStore
+- State: categories, selectedCategory
+- Actions: fetchCategories, createCategory, updateCategory, deleteCategory, selectCategory
+
+### uiStore
+- State: darkMode, sidebarOpen, notifications
+- Actions: toggleDarkMode, toggleSidebar, addNotification, removeNotification
+
+## API Integration
+
+Base URL: `process.env.REACT_APP_API_URL`
+
+- POST /tasks (Task Management)
+- GET /tasks (Task Management)
+- GET /tasks/{id} (Task Management)
+- PUT /tasks/{id} (Task Management)
+- DELETE /tasks/{id} (Task Management)
+- GET /categories (Task Categories)
+- POST /categories (Task Categories)
+- PUT /categories/{id} (Task Categories)
+- DELETE /categories/{id} (Task Categories)
+
+## UI/UX Requirements
+
+1. **Responsive Design**
+   - Mobile-first approach
+   - Breakpoints: 640px (mobile), 768px (tablet), 1024px (desktop)
+   
+2. **Accessibility**
+   - WCAG 2.1 AA compliance
+   - Keyboard navigation support
+   - Screen reader friendly
+   
+3. **Performance**
+   - Lazy loading for routes
+   - Image optimization
+   - Code splitting by route
+
+4. **Error Handling**
+   - User-friendly error messages
+   - Retry mechanisms for failed requests
+   - Offline state handling
+
+## Additional Features
+
+- Task filtering by status, category, and date range
+- Sorting by priority, due date, or creation date
+- Bulk actions (mark multiple as complete, delete multiple)
+- Quick task creation with minimal fields
+- Keyboard shortcuts for power users
+- Export tasks to CSV format
+- Dark mode toggle
+- Task statistics dashboard
+- Due date reminders
+- Search functionality
+
+## Styling Guidelines
+
+1. Use Tailwind CSS utility classes
+2. Create custom components for repeated patterns
+3. Implement a consistent spacing system
+4. Use CSS variables for theme values
+5. Support dark mode with Tailwind's dark: modifier
+
+## Development Setup
+
+Please create a complete, production-ready application with:
+- All pages and components fully implemented
+- Complete TypeScript types
+- Error boundaries and loading states
+- Form validation with Zod or Yup
+- Responsive design for all screen sizes
+- Clean, maintainable code structure
+- Proper accessibility attributes
+- Performance optimizations
+
+The application should be immediately usable and visually polished, matching the design requirements specified above.

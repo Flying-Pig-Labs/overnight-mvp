@@ -1,0 +1,66 @@
+name: Task Tracker MVP
+description: A simple task tracking application for personal productivity
+features:
+  - name: Task Management
+    description: Create, read, update, and delete tasks
+    endpoints:
+      - method: POST
+        path: /tasks
+        description: Create a new task
+      - method: GET
+        path: /tasks
+        description: List all tasks with optional filtering
+      - method: GET
+        path: /tasks/{id}
+        description: Get a specific task
+      - method: PUT
+        path: /tasks/{id}
+        description: Update a task
+      - method: DELETE
+        path: /tasks/{id}
+        description: Delete a task
+  - name: Task Categories
+    description: Organize tasks by categories
+    endpoints:
+      - method: GET
+        path: /categories
+        description: List all categories
+      - method: POST
+        path: /categories
+        description: Create a new category
+      - method: PUT
+        path: /categories/{id}
+        description: Update a category
+      - method: DELETE
+        path: /categories/{id}
+        description: Delete a category
+data_model:
+  task:
+    - "id: string"
+    - "title: string"
+    - "description: string"
+    - "completed: boolean"
+    - "priority: string"
+    - "dueDate: string"
+    - "categoryId: string"
+    - "createdAt: timestamp"
+    - "updatedAt: timestamp"
+  category:
+    - "id: string"
+    - "name: string"
+    - "color: string"
+    - "icon: string"
+    - "createdAt: timestamp"
+ui_requirements:
+  - Task list view with filtering and sorting
+  - Task creation and editing forms
+  - Category management interface
+  - Dashboard with task statistics
+  - Responsive design for mobile and desktop
+  - Dark mode support
+technical_requirements:
+  - React frontend with TypeScript
+  - Serverless backend on AWS
+  - Real-time updates
+  - Offline capability
+  - Export tasks to CSV

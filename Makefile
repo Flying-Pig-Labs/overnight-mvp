@@ -1,7 +1,7 @@
 # Overnight MVP Makefile
 # Simplifies common development and deployment tasks
 
-.PHONY: help install build dev clean test lint typecheck chat run analyze deploy issues setup-aws docker-build docker-run
+.PHONY: help install build dev clean test lint typecheck mvp run analyze deploy issues setup-aws docker-build docker-run frontend backend example
 
 # Default target - show help
 help:
@@ -16,13 +16,15 @@ help:
 	@echo "  make typecheck    Run TypeScript type checking"
 	@echo ""
 	@echo "CLI Commands:"
-	@echo "  make chat         Start interactive MVP builder"
+	@echo "  make mvp          Start interactive MVP builder"
+	@echo "  make example      Regenerate example MVP in mvps/example-mvp"
 	@echo "  make run          Run example MVP workflow"
 	@echo "  make analyze      Analyze example frontend"
 	@echo "  make deploy       Deploy example project"
 	@echo ""
 	@echo "Workflow Commands:"
-	@echo "  make lovable SPEC=file.yaml     Generate Lovable.dev prompt"
+	@echo "  make frontend     Generate frontend with interactive prompts"
+	@echo "  make backend      Generate backend with Amazon Q"
 	@echo "  make s3-site REPO=github.com/.. Generate S3 deployment prompt"
 	@echo ""
 	@echo "Setup Commands:"
@@ -72,10 +74,21 @@ typecheck:
 	@echo "📝 Running TypeScript type check..."
 	npm run typecheck
 
-# Start interactive chat
-chat: build
+# Start interactive MVP builder
+mvp: build
 	@echo "💬 Starting interactive MVP builder..."
-	AWS_PROFILE=personal ./dist/cli.js chat
+	@if [ "$$(ls -A mvps 2>/dev/null | grep -v example-mvp | wc -l)" -eq 0 ]; then \
+		echo "📁 Creating your first MVP project..."; \
+		read -p "Enter a short name for your MVP (lowercase, no spaces): " MVP_NAME; \
+		mkdir -p "mvps/$$MVP_NAME"; \
+		AWS_PROFILE=personal ./dist/cli.js chat --output "mvps/$$MVP_NAME/bigspec.yaml"; \
+	else \
+		echo "📁 Existing MVP projects:"; \
+		ls -1 mvps | grep -v example-mvp; \
+		read -p "Enter MVP name (or new name to create): " MVP_NAME; \
+		mkdir -p "mvps/$$MVP_NAME"; \
+		AWS_PROFILE=personal ./dist/cli.js chat --output "mvps/$$MVP_NAME/bigspec.yaml"; \
+	fi
 
 # Run example workflow
 run: build
@@ -102,15 +115,39 @@ issues:
 	@chmod +x create_issues.sh
 	./create_issues.sh
 
-# Generate Lovable.dev prompt from MVP spec
-lovable: build
-	@echo "🎨 Generating Lovable.dev prompt..."
-	@if [ -z "$(SPEC)" ]; then \
-		echo "❌ Please provide a spec file: make lovable SPEC=mvp-spec.yaml"; \
+# Generate frontend with interactive prompts
+frontend: build
+	@echo "🎨 Starting frontend generation..."
+	@if [ -z "$(MVP)" ]; then \
+		echo "📁 Available MVP projects:"; \
+		ls -1 mvps 2>/dev/null || echo "No MVPs found"; \
+		read -p "Enter MVP name: " MVP_NAME; \
+	else \
+		MVP_NAME="$(MVP)"; \
+	fi; \
+	if [ ! -f "mvps/$$MVP_NAME/bigspec.yaml" ]; then \
+		echo "❌ MVP $$MVP_NAME not found. Run 'make mvp' first."; \
 		exit 1; \
-	fi
-	@echo "📝 Converting MVP spec to Lovable prompt..."
-	@AWS_PROFILE=personal ./dist/cli.js lovable $(SPEC)
+	fi; \
+	echo "📝 Starting interactive frontend design for $$MVP_NAME..."; \
+	AWS_PROFILE=personal ./dist/cli.js frontend "mvps/$$MVP_NAME/bigspec.yaml" --output "mvps/$$MVP_NAME/frontend-prompt.txt"
+
+# Generate backend with Amazon Q
+backend: build
+	@echo "⚙️  Starting backend generation with Amazon Q..."
+	@if [ -z "$(MVP)" ]; then \
+		echo "📁 Available MVP projects:"; \
+		ls -1 mvps 2>/dev/null || echo "No MVPs found"; \
+		read -p "Enter MVP name: " MVP_NAME; \
+	else \
+		MVP_NAME="$(MVP)"; \
+	fi; \
+	if [ ! -f "mvps/$$MVP_NAME/bigspec.yaml" ]; then \
+		echo "❌ MVP $$MVP_NAME not found. Run 'make mvp' first."; \
+		exit 1; \
+	fi; \
+	echo "📝 Generating backend spec for Lambda+DynamoDB+API Gateway..."; \
+	AWS_PROFILE=personal ./dist/cli.js backend "mvps/$$MVP_NAME/bigspec.yaml" --output "mvps/$$MVP_NAME/backend-prompt.txt"
 
 # Generate S3/CloudFront deployment prompt from GitHub repo
 s3-site:
@@ -121,6 +158,15 @@ s3-site:
 	fi
 	@echo "📝 Creating deployment prompt for $(REPO)..."
 	@AWS_PROFILE=personal ./dist/cli.js s3-site --repo $(REPO)
+
+# Regenerate example MVP
+example: build
+	@echo "🔄 Regenerating example MVP..."
+	@rm -rf mvps/example-mvp
+	@mkdir -p mvps/example-mvp
+	@echo "📝 Creating example specs and prompts..."
+	@AWS_PROFILE=personal ./dist/cli.js example --output-dir mvps/example-mvp
+	@echo "✅ Example MVP regenerated in mvps/example-mvp/"
 
 # Check AWS credentials
 setup-aws:
@@ -166,10 +212,10 @@ docker-run:
 		overnight-mvp chat
 
 # Development workflow shortcuts
-.PHONY: dev-chat dev-run dev-analyze
+.PHONY: dev-mvp dev-run dev-analyze
 
 # Quick development commands
-dev-chat:
+dev-mvp:
 	AWS_PROFILE=personal npm run dev -- chat
 
 dev-run:
@@ -185,7 +231,7 @@ test-workflow: build
 	@echo "🧪 Testing full workflow..."
 	@echo "1. Building project..."
 	@make build
-	@echo "2. Running chat simulation..."
+	@echo "2. Running MVP builder simulation..."
 	@echo "Test MVP for task tracking" | ./dist/cli.js chat -o test-mvp.yaml || true
 	@echo "3. Running workflow..."
 	@./dist/cli.js run test-mvp.yaml --dry-run || true

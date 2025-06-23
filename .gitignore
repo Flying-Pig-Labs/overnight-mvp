@@ -47,3 +47,7 @@ example-api-spec.yaml
 *.tmp
 .cache/
 temp/
+
+# MVP Projects (uncomment after adding example-mvp)
+# mvps/*
+# !mvps/example-mvp/
