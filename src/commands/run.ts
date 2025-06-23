@@ -5,6 +5,7 @@ import yaml from 'yaml';
 import { BedrockClient } from '../lib/bedrock-client.js';
 import { PromptChainManager, workflowSteps } from '../lib/prompt-chain.js';
 import { MVPSpecification, WorkflowState } from '../types/index.js';
+import { resolveMVPName, printMVPInfo } from '../lib/mvp-resolver.js';
 
 interface RunOptions {
   skipFrontend?: boolean;
@@ -12,11 +13,15 @@ interface RunOptions {
   dryRun?: boolean;
 }
 
-export async function runCommand(specFile: string, options: RunOptions) {
+export async function runCommand(mvpNameOrPath: string, options: RunOptions) {
   console.log(chalk.bold.cyan('\n🏃 Running Overnight MVP Workflow\n'));
 
   try {
-    const specContent = await readFile(specFile, 'utf-8');
+    const mvpPaths = await resolveMVPName(mvpNameOrPath);
+    printMVPInfo(mvpPaths);
+    console.log();
+    
+    const specContent = await readFile(mvpPaths.mvpspecPath, 'utf-8');
     const mvpSpec: MVPSpecification = yaml.parse(specContent);
     
     console.log(chalk.bold(`Project: ${mvpSpec.name}`));

@@ -2,17 +2,23 @@ import { readFile, writeFile } from 'fs/promises';
 import chalk from 'chalk';
 import yaml from 'yaml';
 import { MVPSpecification } from '../types/index.js';
+import { resolveMVPName, printMVPInfo } from '../lib/mvp-resolver.js';
+import path from 'path';
 
 interface LovableOptions {
   output: string;
   copy?: boolean;
 }
 
-export async function lovableCommand(specFile: string, options: LovableOptions) {
+export async function lovableCommand(mvpNameOrPath: string, options: LovableOptions) {
   console.log(chalk.bold.cyan('\n🎨 Generating Lovable.dev Prompt\n'));
 
   try {
-    const specContent = await readFile(specFile, 'utf-8');
+    const mvpPaths = await resolveMVPName(mvpNameOrPath);
+    printMVPInfo(mvpPaths);
+    console.log();
+    
+    const specContent = await readFile(mvpPaths.mvpspecPath, 'utf-8');
     const mvpSpec: MVPSpecification = yaml.parse(specContent);
     
     const lovablePrompt = generateLovablePrompt(mvpSpec);

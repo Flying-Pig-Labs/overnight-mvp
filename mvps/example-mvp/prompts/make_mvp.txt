@@ -1,0 +1,119 @@
+You are an expert MVP consultant. Generate a comprehensive MVP specification based on the following:
+
+MVP Name: Task Tracker MVP
+MVP Description: A simple task tracking application for personal productivity
+
+Use this YAML template as a guide for the structure and format:
+
+name: task-tracker
+description: A simple task management application for teams
+features:
+  - Create and manage tasks
+  - Assign tasks to team members
+  - Track task progress
+  - Due date reminders
+  - Team collaboration
+userStories:
+  - As a user, I want to create tasks so I can track my work
+  - As a manager, I want to assign tasks to team members
+  - As a team member, I want to see my assigned tasks
+  - As a user, I want to mark tasks as complete
+frontend:
+  pages:
+    - Dashboard
+    - Task List
+    - Task Detail
+    - Team Members
+    - Settings
+  components:
+    - TaskCard
+    - TaskForm
+    - UserAvatar
+    - ProgressBar
+    - DatePicker
+  styling:
+    theme: modern
+    primaryColor: "#3B82F6"
+    framework: Tailwind CSS
+backend:
+  apis:
+    - path: /api/tasks
+      method: GET
+      description: Get all tasks
+    - path: /api/tasks
+      method: POST
+      description: Create a new task
+    - path: /api/tasks/:id
+      method: PUT
+      description: Update a task
+    - path: /api/tasks/:id
+      method: DELETE
+      description: Delete a task
+    - path: /api/users
+      method: GET
+      description: Get all users
+    - path: /api/auth/login
+      method: POST
+      description: User login
+  dataModels:
+    - name: Task
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: title
+          type: string
+          required: true
+        - name: description
+          type: string
+          required: false
+        - name: assignee
+          type: string
+          required: false
+        - name: dueDate
+          type: date
+          required: false
+        - name: status
+          type: string
+          required: true
+    - name: User
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: name
+          type: string
+          required: true
+        - name: email
+          type: string
+          required: true
+        - name: role
+          type: string
+          required: true
+  integrations:
+    - AWS Cognito for authentication
+    - AWS SES for email notifications
+deployment:
+  hosting: AWS
+  domain: task-tracker.example.com
+  scaling:
+    initial: minimal
+    target: 1000 users
+
+Generate a complete MVP specification that:
+1. Expands the description into concrete features
+2. Defines clear REST API endpoints for each feature
+3. Creates a normalized data model with proper relationships
+4. Lists specific UI pages and components needed
+5. Includes relevant technical requirements
+6. Focuses on MVP scope - essential features only
+
+Important formatting rules:
+- Use the exact YAML structure from the template
+- Keep feature names concise (2-3 words)
+- Use lowercase for model names, camelCase for field names
+- Include realistic field types: string, number, boolean, timestamp, array, object
+- Make sure all endpoints follow RESTful conventions
+- Include user stories that match the features
+
+Return ONLY the YAML specification, no additional text or explanation.

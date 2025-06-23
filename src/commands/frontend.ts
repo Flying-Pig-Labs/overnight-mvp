@@ -1,14 +1,17 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import yaml from 'yaml';
-import { BedrockClient } from '../lib/bedrock-client.js';
 import path from 'path';
+import { BedrockClient } from '../lib/bedrock-client.js';
+import { listAvailableMVPs, resolveMVPName } from '../lib/mvp-resolver.js';
 
 interface FrontendOptions {
   output?: string;
   model: string;
+  shortname?: string;
 }
 
 interface DesignPreferences {
@@ -20,15 +23,67 @@ interface DesignPreferences {
   inspiration: string;
 }
 
-export async function frontendCommand(specPath: string, options: FrontendOptions) {
+export async function frontendCommand(options: FrontendOptions) {
   console.log(chalk.bold.cyan('\n🎨 Frontend Design Session\n'));
-  console.log(chalk.gray('Let\'s create a beautiful frontend for your MVP.'));
-  console.log(chalk.gray('I\'ll ask you about the look, feel, and user experience.\n'));
-
+  
   try {
-    // Load the bigspec
-    const specContent = await readFile(specPath, 'utf-8');
-    const bigSpec = yaml.parse(specContent);
+    // Get list of available MVPs
+    const availableMVPs = await listAvailableMVPs();
+    const nonExampleMVPs = availableMVPs.filter(mvp => mvp !== 'example-mvp');
+    
+    if (nonExampleMVPs.length === 0) {
+      console.log(chalk.yellow('No MVPs found. Please run "make mvp" first to create an MVP.'));
+      return;
+    }
+
+    // Select MVP
+    let selectedMVP: string;
+    if (options.shortname) {
+      if (!nonExampleMVPs.includes(options.shortname)) {
+        console.error(chalk.red(`MVP '${options.shortname}' not found.`));
+        console.log(chalk.gray('Available MVPs:'));
+        nonExampleMVPs.forEach(mvp => console.log(chalk.gray(`  - ${mvp}`)));
+        return;
+      }
+      selectedMVP = options.shortname;
+    } else {
+      const { mvpChoice } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'mvpChoice',
+          message: 'Which MVP do you want to create a frontend for?',
+          choices: nonExampleMVPs
+        }
+      ]);
+      selectedMVP = mvpChoice;
+    }
+
+    const mvpPaths = await resolveMVPName(selectedMVP);
+    console.log(chalk.gray(`\nGenerating frontend for: ${chalk.bold(selectedMVP)}`));
+    
+    // Check if frontend spec already exists
+    if (existsSync(mvpPaths.frontspecPath)) {
+      const { overwrite } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'overwrite',
+          message: chalk.yellow('Frontend specification already exists. Overwrite?'),
+          default: false
+        }
+      ]);
+      
+      if (!overwrite) {
+        console.log(chalk.gray('Frontend generation cancelled.'));
+        return;
+      }
+    }
+
+    console.log(chalk.gray('Let\'s create a beautiful frontend for your MVP.'));
+    console.log(chalk.gray('I\'ll ask you about the look, feel, and user experience.\n'));
+
+    // Load the mvpspec
+    const specContent = await readFile(mvpPaths.mvpspecPath, 'utf-8');
+    const mvpSpec = yaml.parse(specContent);
 
     // Interactive design questions
     const designAnswers = await inquirer.prompt([
@@ -121,28 +176,47 @@ export async function frontendCommand(specPath: string, options: FrontendOptions
 
     const spinner = ora('Generating frontend implementation prompt...').start();
 
-    // Create the frontend spec from bigspec
-    const frontSpec = await generateFrontendSpec(bigSpec, preferences, interactionAnswers);
-    
-    // Generate the Lovable.dev prompt
-    const prompt = await generateFrontendPrompt(bigSpec, frontSpec, preferences, interactionAnswers);
+    try {
+      // Ensure prompts directory exists
+      await mkdir(mvpPaths.promptsDir, { recursive: true });
+      
+      // Load the frontend template and prompt
+      const templatePath = path.join(process.cwd(), 'templates', '2-frontspec-template.yaml');
+      const promptPath = path.join(process.cwd(), 'prompts', '3-populate-frontspec-prompt.md');
+      
+      const templateContent = await readFile(templatePath, 'utf-8');
+      const promptTemplate = await readFile(promptPath, 'utf-8');
 
-    // Save outputs
-    const outputPath = options.output || path.join(path.dirname(specPath), 'frontend-prompt.txt');
-    const frontSpecPath = path.join(path.dirname(specPath), 'frontspec.yaml');
-    
-    await writeFile(outputPath, prompt);
-    await writeFile(frontSpecPath, yaml.stringify(frontSpec));
-    
-    spinner.succeed(chalk.green('✅ Frontend design complete!'));
-    
-    console.log(chalk.bold.cyan('\n📋 Generated Files:'));
-    console.log(chalk.gray(`- Frontend Specification: ${frontSpecPath}`));
-    console.log(chalk.gray(`- Lovable.dev Prompt: ${outputPath}`));
-    console.log(chalk.bold.cyan('\n🚀 Next Steps:'));
-    console.log(chalk.gray('1. Copy the prompt from ' + outputPath));
-    console.log(chalk.gray('2. Paste into Lovable.dev to generate your frontend'));
-    console.log(chalk.gray('3. Run "make backend" to create the backend\n'));
+      // Create the frontend spec from mvpspec
+      const frontSpec = await generateFrontendSpec(mvpSpec, preferences, interactionAnswers);
+      
+      // Generate the Lovable.dev prompt
+      const prompt = await generateFrontendPrompt(mvpSpec, frontSpec, preferences, interactionAnswers, promptTemplate);
+
+      // Save the prompt to prompts directory first
+      await writeFile(mvpPaths.frontendMakePromptPath, prompt);
+
+      // Save outputs
+      const outputPath = options.output || mvpPaths.frontendPromptPath;
+      const frontSpecPath = mvpPaths.frontspecPath;
+      
+      await writeFile(outputPath, prompt);
+      await writeFile(frontSpecPath, yaml.stringify(frontSpec));
+      
+      spinner.succeed(chalk.green('✅ Frontend design complete!'));
+      
+      console.log(chalk.bold.cyan('\n📋 Generated Files:'));
+      console.log(chalk.gray(`- Frontend Specification: ${frontSpecPath}`));
+      console.log(chalk.gray(`- Lovable.dev Prompt: ${outputPath}`));
+      console.log(chalk.bold.cyan('\n🚀 Next Steps:'));
+      console.log(chalk.gray('1. Copy the prompt from ' + outputPath));
+      console.log(chalk.gray('2. Paste into Lovable.dev to generate your frontend'));
+      console.log(chalk.gray('3. Run "make backend" to create the backend\n'));
+
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to generate frontend specification'));
+      throw error;
+    }
 
   } catch (error) {
     console.error(chalk.red('Error:'), error);
@@ -150,10 +224,10 @@ export async function frontendCommand(specPath: string, options: FrontendOptions
   }
 }
 
-async function generateFrontendSpec(bigSpec: any, preferences: DesignPreferences, interactions: any): Promise<any> {
-  // Transform bigspec into detailed frontend specification
+async function generateFrontendSpec(mvpSpec: any, preferences: DesignPreferences, interactions: any): Promise<any> {
+  // Transform mvpspec into detailed frontend specification
   return {
-    name: `${bigSpec.name} Frontend`,
+    name: `${mvpSpec.name} Frontend`,
     framework: 'React with TypeScript',
     styling: 'Tailwind CSS',
     design: {
@@ -165,15 +239,15 @@ async function generateFrontendSpec(bigSpec: any, preferences: DesignPreferences
       microInteractions: interactions.microInteractions,
       complexity: interactions.complexity
     },
-    pages: generatePagesFromFeatures(bigSpec.features),
-    components: generateComponentsFromFeatures(bigSpec.features),
+    pages: generatePagesFromFeatures(mvpSpec.features),
+    components: generateComponentsFromFeatures(mvpSpec.features),
     state_management: {
       tool: 'Zustand',
-      stores: generateStoresFromDataModel(bigSpec.data_model)
+      stores: generateStoresFromDataModel(mvpSpec.data_model)
     },
     api_integration: {
       baseUrl: 'process.env.REACT_APP_API_URL',
-      endpoints: extractEndpointsFromFeatures(bigSpec.features)
+      endpoints: extractEndpointsFromFeatures(mvpSpec.features)
     }
   };
 }
@@ -281,109 +355,107 @@ function extractEndpointsFromFeatures(features: any[]): any[] {
   return endpoints;
 }
 
-async function generateFrontendPrompt(bigSpec: any, frontSpec: any, preferences: DesignPreferences, interactions: any): Promise<string> {
-  const prompt = `# ${bigSpec.name} - Frontend Implementation
+async function generateFrontendPrompt(mvpSpec: any, frontSpec: any, preferences: DesignPreferences, interactions: any, promptTemplate: string): Promise<string> {
+  const basePrompt = `# Context
 
-Create a modern, responsive web application with the following specifications:
+You are a senior AI application engineer using Lovable to build a complete, production-ready application frontend.
 
-## Project Overview
-${bigSpec.description}
+Below this prompt is a full specification file called \`mvpspec.yml\` that serves as your Knowledge Base and single source of truth. It contains the project's overview, features, API endpoints, data models, UI requirements, and technical constraints.
 
-## Design Requirements
+## Task
 
-### Visual Design & Feel
-- **Vibe**: ${preferences.vibe}
-- **Emotions**: Users should feel ${preferences.emotions.join(', ').toLowerCase()}
+Build the complete frontend application described in \`mvpspec.yml\` from scratch in Lovable, with all API calls properly stubbed for a backend that doesn't exist yet.
+
+### Guidelines
+
+**Tech Stack Requirements:**
+- Frontend Framework: React + TypeScript (strict mode)
+- Styling: Tailwind CSS + shadcn/ui components
+- State Management: Use appropriate solution (Zustand/Context API)
+- Build Tool: Vite
+- API Client: Axios or Fetch API
+
+**Backend Architecture (Already Decided):**
+- The backend will be AWS Lambda + DynamoDB + API Gateway
+- Do NOT suggest alternative backend architectures
+- Do NOT implement any backend code
+- Focus exclusively on the frontend implementation
+
+**Development Approach:**
+1. Start by parsing the \`mvpspec.yml\` and summarizing the application
+2. Scaffold the base layout and navigation structure
+3. Create all pages and routes based on UI requirements
+4. Implement components progressively from layout → containers → features
+5. Wire up all API calls with proper error handling
+6. Ensure mobile-first, responsive design throughout
+
+#### Constraints
+
+**API Implementation Requirements:**
+- Make REAL HTTP calls to placeholder endpoints (e.g., \`http://localhost:3001/api/...\`)
+- All API calls will initially fail with 404 errors - this is expected
+- When any API call fails, show a toast/notification bubble with: "API not implemented yet: [Action Name]"
+- Use a toast library (react-hot-toast or similar) for notifications
+- Handle errors gracefully without breaking the UI flow
+- Structure request payloads exactly as the backend will expect them
+- Include proper headers (Content-Type, etc.)
+- Show loading states during API calls
+
+**Example API Implementation:**
+\`\`\`typescript
+const createUser = async (userData: UserData) => {
+  try {
+    setLoading(true);
+    const response = await axios.post('http://localhost:3001/api/users', userData);
+    return response.data;
+  } catch (error) {
+    toast.error('API not implemented yet: Creating user');
+    // Optionally return mock data to keep UI functional
+    return { id: 'mock-id', ...userData };
+  } finally {
+    setLoading(false);
+  }
+};
+\`\`\`
+
+**Strict Requirements:**
+- Do NOT invent features not in the specification
+- Do NOT modify field names, endpoints, or data types
+- Do NOT implement authentication unless specified
+- Do NOT create backend code or serverless functions
+- Maintain clean separation of concerns
+- Follow the exact URL patterns from the spec
+
+# Instructions
+
+1. First, parse and understand the complete \`mvpspec.yml\` below
+2. Create a clear mental model of the application's structure
+3. Build the frontend systematically, starting with layout and navigation
+4. Implement all features with proper API stubs as described above
+5. Ensure the UI is polished, responsive, and production-ready
+
+## Design Specifications
+
+**Visual Design Requirements:**
 - **Style**: ${preferences.style}
-- **Color Scheme**: ${preferences.colorScheme}
+- **Color Palette**: ${preferences.colorScheme}
 - **Target Audience**: ${preferences.targetAudience}
-${preferences.inspiration ? `- **Inspiration**: ${preferences.inspiration}` : ''}
+- **Brand Personality**: ${preferences.vibe}
+- **User Emotions**: ${preferences.emotions.join(', ').toLowerCase()}
+${preferences.inspiration ? `- **Design Inspiration**: ${preferences.inspiration}` : ''}
 
-### Interactions & Animations
-- ${interactions.animations ? 'Smooth animations and transitions throughout' : 'Minimal animations'}
-- ${interactions.microInteractions ? 'Micro-interactions on all interactive elements' : 'Simple interactions only'}
+**Interaction Design:**
+- ${interactions.animations ? 'Smooth animations and transitions on all interactions' : 'Minimal animations, focus on performance'}
+- ${interactions.microInteractions ? 'Rich micro-interactions (hover effects, loading states, transitions)' : 'Simple, functional interactions only'}
 - **Interface Complexity**: ${interactions.complexity}
+- Error states should be friendly and helpful
+- Success states should be celebratory but professional
 
-## Technical Stack
-- **Framework**: ${frontSpec.framework}
-- **Styling**: ${frontSpec.styling}
-- **State Management**: ${frontSpec.state_management.tool}
-- **Build Tool**: Vite
-- **Type Safety**: TypeScript with strict mode
+## MVP Specification
 
-## Features to Implement
+\`\`\`yaml
+${yaml.stringify(mvpSpec)}
+\`\`\``;
 
-${bigSpec.features.map((feature: any) => `### ${feature.name}
-${feature.description}
-${feature.endpoints ? `
-**API Endpoints:**
-${feature.endpoints.map((e: any) => `- ${e.method} ${e.path} - ${e.description}`).join('\n')}
-` : ''}`).join('\n\n')}
-
-## Pages & Routes
-
-${frontSpec.pages.map((page: any) => `- **${page.name}** (${page.path}): ${page.description}`).join('\n')}
-
-## Components Structure
-
-${frontSpec.components.map((c: any) => `- **${c.name}** (${c.type}): ${c.description}`).join('\n')}
-
-## State Management
-
-Using ${frontSpec.state_management.tool} for state management with the following stores:
-
-${frontSpec.state_management.stores.map((store: any) => `### ${store.name}
-- State: ${store.state.map((s: any) => `${s.split(':')[0]}`).join(', ')}
-- Actions: ${store.actions.join(', ')}`).join('\n\n')}
-
-## API Integration
-
-Base URL: \`${frontSpec.api_integration.baseUrl}\`
-
-${frontSpec.api_integration.endpoints.map((endpoint: any) => 
-  `- ${endpoint.method} ${endpoint.path} (${endpoint.feature})`
-).join('\n')}
-
-## UI/UX Requirements
-
-1. **Responsive Design**
-   - Mobile-first approach
-   - Breakpoints: 640px (mobile), 768px (tablet), 1024px (desktop)
-   
-2. **Accessibility**
-   - WCAG 2.1 AA compliance
-   - Keyboard navigation support
-   - Screen reader friendly
-   
-3. **Performance**
-   - Lazy loading for routes
-   - Image optimization
-   - Code splitting by route
-
-4. **Error Handling**
-   - User-friendly error messages
-   - Retry mechanisms for failed requests
-   - Offline state handling
-
-## Styling Guidelines
-
-1. Use Tailwind CSS utility classes
-2. Create custom components for repeated patterns
-3. Implement a consistent spacing system
-4. Use CSS variables for theme values
-5. Support dark mode (if applicable)
-
-## Development Setup
-
-Please create a complete, production-ready application with:
-- All pages and components fully implemented
-- Complete TypeScript types
-- Error boundaries and loading states
-- Form validation
-- Responsive design
-- Clean, maintainable code structure
-
-The application should be immediately usable and visually polished, matching the design requirements specified above.`;
-
-  return prompt;
+  return basePrompt;
 }

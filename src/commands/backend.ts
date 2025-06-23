@@ -1,62 +1,133 @@
+import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import yaml from 'yaml';
 import path from 'path';
+import { listAvailableMVPs, resolveMVPName } from '../lib/mvp-resolver.js';
 
 interface BackendOptions {
   output?: string;
   model: string;
+  shortname?: string;
 }
 
-export async function backendCommand(specPath: string, options: BackendOptions) {
+export async function backendCommand(options: BackendOptions) {
   console.log(chalk.bold.cyan('\n⚙️  Backend Architecture Generation\n'));
-  console.log(chalk.gray('Generating serverless backend specification for AWS Lambda + DynamoDB + API Gateway'));
-
-  const spinner = ora('Processing MVP specification...').start();
-
+  
   try {
-    // Load the bigspec
-    const specContent = await readFile(specPath, 'utf-8');
-    const bigSpec = yaml.parse(specContent);
+    // Get list of available MVPs
+    const availableMVPs = await listAvailableMVPs();
+    const nonExampleMVPs = availableMVPs.filter(mvp => mvp !== 'example-mvp');
+    
+    if (nonExampleMVPs.length === 0) {
+      console.log(chalk.yellow('No MVPs found. Please run "make mvp" first to create an MVP.'));
+      return;
+    }
 
-    // Generate backend specification
-    const backSpec = generateBackendSpec(bigSpec);
-    
-    // Generate Amazon Q Developer prompt
-    const prompt = generateBackendPrompt(bigSpec, backSpec);
+    // Select MVP
+    let selectedMVP: string;
+    if (options.shortname) {
+      if (!nonExampleMVPs.includes(options.shortname)) {
+        console.error(chalk.red(`MVP '${options.shortname}' not found.`));
+        console.log(chalk.gray('Available MVPs:'));
+        nonExampleMVPs.forEach(mvp => console.log(chalk.gray(`  - ${mvp}`)));
+        return;
+      }
+      selectedMVP = options.shortname;
+    } else {
+      const { mvpChoice } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'mvpChoice',
+          message: 'Which MVP do you want to create a backend for?',
+          choices: nonExampleMVPs
+        }
+      ]);
+      selectedMVP = mvpChoice;
+    }
 
-    // Save outputs
-    const outputPath = options.output || path.join(path.dirname(specPath), 'backend-prompt.txt');
-    const backSpecPath = path.join(path.dirname(specPath), 'backspec.yaml');
+    const mvpPaths = await resolveMVPName(selectedMVP);
+    console.log(chalk.gray(`\nGenerating backend for: ${chalk.bold(selectedMVP)}`));
     
-    await writeFile(outputPath, prompt);
-    await writeFile(backSpecPath, yaml.stringify(backSpec));
-    
-    spinner.succeed(chalk.green('✅ Backend specification complete!'));
-    
-    console.log(chalk.bold.cyan('\n📋 Generated Files:'));
-    console.log(chalk.gray(`- Backend Specification: ${backSpecPath}`));
-    console.log(chalk.gray(`- Amazon Q Prompt: ${outputPath}`));
-    console.log(chalk.bold.cyan('\n🚀 Next Steps:'));
-    console.log(chalk.gray('1. Open Amazon Q Developer in your IDE'));
-    console.log(chalk.gray('2. Copy the prompt from ' + outputPath));
-    console.log(chalk.gray('3. Let Q generate your serverless backend'));
-    console.log(chalk.gray('4. Deploy with "sam deploy" or "cdk deploy"\n'));
+    // Check if backend spec already exists
+    if (existsSync(mvpPaths.backspecPath)) {
+      const { overwrite } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'overwrite',
+          message: chalk.yellow('Backend specification already exists. Overwrite?'),
+          default: false
+        }
+      ]);
+      
+      if (!overwrite) {
+        console.log(chalk.gray('Backend generation cancelled.'));
+        return;
+      }
+    }
+
+    console.log(chalk.gray('Generating serverless backend specification for AWS Lambda + DynamoDB + API Gateway'));
+
+    const spinner = ora('Processing MVP specification...').start();
+
+    try {
+      // Ensure prompts directory exists
+      await mkdir(mvpPaths.promptsDir, { recursive: true });
+      
+      // Load the mvpspec
+      const specContent = await readFile(mvpPaths.mvpspecPath, 'utf-8');
+      const mvpSpec = yaml.parse(specContent);
+
+      // Load backend prompt template
+      const promptPath = path.join(process.cwd(), 'prompts', '5-backend-implementation-prompt.md');
+      const promptTemplate = await readFile(promptPath, 'utf-8');
+
+      // Generate backend specification
+      const backSpec = generateBackendSpec(mvpSpec);
+      
+      // Generate Amazon Q Developer prompt
+      const prompt = generateBackendPrompt(mvpSpec, backSpec, promptTemplate);
+
+      // Save the prompt to prompts directory first
+      await writeFile(mvpPaths.backendMakePromptPath, prompt);
+
+      // Save outputs
+      const outputPath = options.output || mvpPaths.backendPromptPath;
+      const backSpecPath = mvpPaths.backspecPath;
+      
+      await writeFile(outputPath, prompt);
+      await writeFile(backSpecPath, yaml.stringify(backSpec));
+      
+      spinner.succeed(chalk.green('✅ Backend specification complete!'));
+      
+      console.log(chalk.bold.cyan('\n📋 Generated Files:'));
+      console.log(chalk.gray(`- Backend Specification: ${backSpecPath}`));
+      console.log(chalk.gray(`- Amazon Q Prompt: ${outputPath}`));
+      console.log(chalk.bold.cyan('\n🚀 Next Steps:'));
+      console.log(chalk.gray('1. Open Amazon Q Developer in your IDE'));
+      console.log(chalk.gray('2. Copy the prompt from ' + outputPath));
+      console.log(chalk.gray('3. Let Q generate your serverless backend'));
+      console.log(chalk.gray('4. Deploy with "sam deploy" or "cdk deploy"\n'));
+
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to generate backend specification'));
+      throw error;
+    }
 
   } catch (error) {
-    spinner.fail(chalk.red('Failed to generate backend specification'));
     console.error(chalk.red('Error:'), error);
     process.exit(1);
   }
 }
 
-function generateBackendSpec(bigSpec: any): any {
-  const tables = generateDynamoTables(bigSpec.data_model);
-  const lambdas = generateLambdaFunctions(bigSpec.features);
+function generateBackendSpec(mvpSpec: any): any {
+  const tables = generateDynamoTables(mvpSpec.data_model);
+  const lambdas = generateLambdaFunctions(mvpSpec.features);
   
   return {
-    name: `${bigSpec.name} Backend`,
+    name: `${mvpSpec.name} Backend`,
     architecture: 'Serverless (Lambda + DynamoDB + API Gateway)',
     runtime: 'Node.js 20.x',
     database: {
@@ -161,27 +232,18 @@ function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function generateBackendPrompt(bigSpec: any, backSpec: any): string {
-  return `# ${bigSpec.name} - Serverless Backend Implementation
-
-Create a production-ready serverless backend using AWS Lambda, DynamoDB, and API Gateway.
-
-## Project Overview
-${bigSpec.description}
-
-## Architecture Requirements
-
-### Core Technologies
-- **Runtime**: ${backSpec.runtime}
-- **Database**: ${backSpec.database.type}
-- **API**: ${backSpec.api_gateway.type} API Gateway
-- **IaC**: ${backSpec.infrastructure.iac}
-- **Monitoring**: ${backSpec.infrastructure.monitoring}
-- **Tracing**: ${backSpec.infrastructure.tracing}
-
-### DynamoDB Tables
-
-${backSpec.database.tables.map((table: any) => `#### ${table.name} Table
+function generateBackendPrompt(mvpSpec: any, backSpec: any, promptTemplate: string): string {
+  // Replace variables in the prompt template
+  const prompt = promptTemplate
+    .replace(/{{mvpName}}/g, mvpSpec.name)
+    .replace(/{{mvpDescription}}/g, mvpSpec.description)
+    .replace(/{{runtime}}/g, backSpec.runtime)
+    .replace(/{{databaseType}}/g, backSpec.database.type)
+    .replace(/{{apiType}}/g, backSpec.api_gateway.type)
+    .replace(/{{iac}}/g, backSpec.infrastructure.iac)
+    .replace(/{{monitoring}}/g, backSpec.infrastructure.monitoring)
+    .replace(/{{tracing}}/g, backSpec.infrastructure.tracing)
+    .replace(/{{tables}}/g, backSpec.database.tables.map((table: any) => `#### ${table.name} Table
 - **Partition Key**: ${table.partition_key} (String)
 - **Sort Key**: ${table.sort_key} (String)
 - **Attributes**: ${table.attributes.map((attr: string) => {
@@ -189,143 +251,23 @@ ${backSpec.database.tables.map((table: any) => `#### ${table.name} Table
   return `\n  - ${name} (${type || 'String'})`;
 }).join('')}
 ${table.indexes.length > 0 ? `- **Global Secondary Indexes**:${table.indexes.map((idx: any) => `
-  - ${idx.name}: PK=${idx.partition_key}, SK=${idx.sort_key}`).join('')}` : ''}`).join('\n\n')}
-
-### Lambda Functions
-
-${backSpec.lambdas.map((lambda: any) => `#### ${lambda.name}
+  - ${idx.name}: PK=${idx.partition_key}, SK=${idx.sort_key}`).join('')}` : ''}`).join('\n\n'))
+    .replace(/{{lambdas}}/g, backSpec.lambdas.map((lambda: any) => `#### ${lambda.name}
 - **Handler**: ${lambda.handler}
 - **HTTP Method**: ${lambda.method}
 - **Path**: ${lambda.path}
 - **Description**: ${lambda.description}
 - **Environment Variables**:
-  - TABLE_NAME: ${lambda.environment.TABLE_NAME}`).join('\n\n')}
-
-### API Gateway Configuration
-
-- **Type**: ${backSpec.api_gateway.type}
-- **CORS**: ${backSpec.api_gateway.cors ? 'Enabled for all origins' : 'Disabled'}
-- **Authorization**: ${backSpec.api_gateway.authorization}
-- **Rate Limiting**: ${backSpec.api_gateway.throttling.rate_limit} requests/second
-- **Burst Limit**: ${backSpec.api_gateway.throttling.burst_limit} requests
-
-## Implementation Requirements
-
-### 1. Project Structure
-\`\`\`
-backend/
-├── template.yaml          # SAM template
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── handlers/         # Lambda function handlers
-│   ├── services/         # Business logic
-│   ├── models/           # Data models
-│   ├── utils/            # Shared utilities
-│   └── types/            # TypeScript types
-└── tests/                # Unit and integration tests
-\`\`\`
-
-### 2. Lambda Function Implementation
-
-Each Lambda function should:
-- Use TypeScript for type safety
-- Implement proper error handling with meaningful error messages
-- Include input validation using a library like Joi or Zod
-- Return consistent response formats
-- Include correlation IDs for request tracing
-- Implement proper logging using structured logs
-
-### 3. DynamoDB Best Practices
-
-- Use single-table design where appropriate
-- Implement optimistic locking for updates
-- Use batch operations for bulk actions
-- Implement proper pagination using LastEvaluatedKey
-- Design partition keys to avoid hot partitions
-- Use transactions for atomic operations
-
-### 4. Security Requirements
-
-- Implement least-privilege IAM roles
-- Use environment variables for configuration
-- Enable API Gateway request validation
-- Implement rate limiting per API key
-- Use AWS Secrets Manager for sensitive data
-- Enable AWS WAF for additional protection
-
-### 5. Error Handling
-
-Implement consistent error responses:
-\`\`\`json
-{
-  "error": {
-    "code": "RESOURCE_NOT_FOUND",
-    "message": "The requested resource was not found",
-    "details": {...},
-    "correlationId": "uuid"
-  }
-}
-\`\`\`
-
-### 6. Monitoring & Observability
-
-- CloudWatch Logs for all Lambda functions
-- Custom CloudWatch metrics for business KPIs
-- X-Ray tracing for performance monitoring
-- CloudWatch alarms for error rates and latencies
-- Structured logging with JSON format
-
-### 7. Testing Strategy
-
-- Unit tests for all business logic
-- Integration tests for API endpoints
-- Load testing configuration
-- Local testing with SAM CLI
-
-### 8. Deployment Configuration
-
-Include in template.yaml:
-- API Gateway stage variables
-- Lambda environment configurations
-- DynamoDB provisioned throughput settings
-- CloudWatch log retention policies
-- API usage plans and API keys
-
-### 9. Sample Code Structure
-
-For each Lambda handler:
-\`\`\`typescript
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
-
-export const handler: APIGatewayProxyHandler = async (event) => {
-  // Implementation
-};
-\`\`\`
-
-## Features to Implement
-
-${bigSpec.features.map((feature: any) => `### ${feature.name}
+  - TABLE_NAME: ${lambda.environment.TABLE_NAME}`).join('\n\n'))
+    .replace(/{{cors}}/g, backSpec.api_gateway.cors ? 'Enabled for all origins' : 'Disabled')
+    .replace(/{{authorization}}/g, backSpec.api_gateway.authorization)
+    .replace(/{{rateLimit}}/g, backSpec.api_gateway.throttling.rate_limit)
+    .replace(/{{burstLimit}}/g, backSpec.api_gateway.throttling.burst_limit)
+    .replace(/{{features}}/g, mvpSpec.features.map((feature: any) => `### ${feature.name}
 ${feature.description}
 
 **Required Endpoints:**
-${feature.endpoints ? feature.endpoints.map((e: any) => `- ${e.method} ${e.path} - ${e.description}`).join('\n') : 'No endpoints defined'}`).join('\n\n')}
+${feature.endpoints ? feature.endpoints.map((e: any) => `- ${e.method} ${e.path} - ${e.description}`).join('\n') : 'No endpoints defined'}`).join('\n\n'));
 
-## Deliverables
-
-1. Complete SAM template (template.yaml)
-2. All Lambda function implementations
-3. DynamoDB table definitions
-4. API Gateway configuration
-5. IAM roles and policies
-6. Environment configuration files
-7. Deployment scripts
-8. README with setup instructions
-
-Please generate a complete, production-ready serverless backend that can be deployed immediately using SAM CLI.`;
+  return prompt;
 }

@@ -2,10 +2,6 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { mvpCommand } from './commands/mvp.js';
-import { runCommand } from './commands/run.js';
-import { analyzeCommand } from './commands/analyze.js';
-import { deployCommand } from './commands/deploy.js';
-import { lovableCommand } from './commands/lovable.js';
 import { s3SiteCommand } from './commands/s3-site.js';
 import { frontendCommand } from './commands/frontend.js';
 import { backendCommand } from './commands/backend.js';
@@ -23,48 +19,11 @@ program
   .description('Start an interactive MVP builder session')
   .option('-o, --output <file>', 'Save the MVP specification to a file')
   .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .option('--name <name>')
+  .option('--description <description>')
   .action(mvpCommand);
 
-// Keep 'chat' as an alias for backward compatibility
-program
-  .command('chat')
-  .description('(Alias for mvp) Start an interactive MVP builder session')
-  .option('-o, --output <file>', 'Save the MVP specification to a file')
-  .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
-  .action(mvpCommand);
 
-program
-  .command('run')
-  .description('Run the complete MVP workflow from a specification')
-  .argument('<spec>', 'Path to the MVP specification file')
-  .option('--skip-frontend', 'Skip frontend generation')
-  .option('--skip-backend', 'Skip backend generation')
-  .option('--dry-run', 'Show what would be done without executing')
-  .action(runCommand);
-
-program
-  .command('analyze')
-  .description('Analyze a frontend to extract API requirements')
-  .argument('<frontend-path>', 'Path to the frontend code')
-  .option('-o, --output <file>', 'Output file for API specification', 'api-spec.yaml')
-  .action(analyzeCommand);
-
-program
-  .command('deploy')
-  .description('Deploy the MVP to AWS')
-  .argument('<project-path>', 'Path to the project directory')
-  .option('--frontend-only', 'Deploy only the frontend')
-  .option('--backend-only', 'Deploy only the backend')
-  .option('--stage <stage>', 'Deployment stage', 'prod')
-  .action(deployCommand);
-
-program
-  .command('lovable')
-  .description('Generate a Lovable.dev prompt from an MVP specification')
-  .argument('<spec>', 'Path to the MVP specification file')
-  .option('-o, --output <file>', 'Save the prompt to a file', 'lovable-prompt.txt')
-  .option('--copy', 'Copy the prompt to clipboard')
-  .action(lovableCommand);
 
 program
   .command('s3-site')
@@ -77,17 +36,17 @@ program
 program
   .command('frontend')
   .description('Generate frontend implementation prompt with interactive design session')
-  .argument('<spec>', 'Path to the bigspec.yaml file')
   .option('-o, --output <file>', 'Save the prompt to a file')
   .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .option('--shortname <shortname>')
   .action(frontendCommand);
 
 program
   .command('backend')
   .description('Generate backend implementation prompt for AWS Lambda + DynamoDB')
-  .argument('<spec>', 'Path to the bigspec.yaml file')
   .option('-o, --output <file>', 'Save the prompt to a file')
   .option('--model <model>', 'Bedrock model to use', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+  .option('--shortname <shortname>')
   .action(backendCommand);
 
 program
@@ -99,16 +58,20 @@ program
 program.addHelpText('after', `
 ${chalk.bold('Examples:')}
   $ overnight-mvp mvp                     # Start interactive MVP builder
-  $ overnight-mvp run mvp-spec.yaml       # Run complete workflow
-  $ overnight-mvp analyze ./frontend      # Extract API requirements
-  $ overnight-mvp deploy ./my-project     # Deploy to AWS
+  $ overnight-mvp frontend                # Generate frontend (interactive selection)
+  $ overnight-mvp backend                 # Generate backend (interactive selection)
+  $ overnight-mvp s3-site --repo <url>    # Generate S3/CloudFront deployment
 
 ${chalk.bold('Workflow Steps:')}
-  1. ${chalk.cyan('MVP')} - Describe your MVP idea in natural language
-  2. ${chalk.cyan('Generate')} - Create frontend with Lovable.dev
-  3. ${chalk.cyan('Analyze')} - Extract API requirements from frontend
-  4. ${chalk.cyan('Build')} - Generate backend with AWS Q Developer
-  5. ${chalk.cyan('Deploy')} - Deploy full stack to AWS
+  1. ${chalk.cyan('MVP')} - Create MVP specification with name and description
+  2. ${chalk.cyan('Frontend')} - Design and generate frontend with Lovable.dev
+  3. ${chalk.cyan('Backend')} - Generate backend with AWS Q Developer
+  4. ${chalk.cyan('Deploy')} - Deploy using generated infrastructure code
+
+${chalk.bold('Using Make Commands:')}
+  $ make mvp                              # Create new MVP specification
+  $ make frontend                         # Generate frontend (interactive)
+  $ make backend                          # Generate backend (interactive)
 `);
 
 program.parse();

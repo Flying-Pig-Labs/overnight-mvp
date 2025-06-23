@@ -1,187 +1,175 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import yaml from 'yaml';
 import path from 'path';
 import { BedrockClient } from '../lib/bedrock-client.js';
+import { parseMVPName } from '../lib/mvp-resolver.js';
 
 interface MVPOptions {
   output?: string;
   model: string;
-}
-
-interface MVPConversation {
-  messages: Array<{
-    role: 'user' | 'assistant';
-    content: string;
-  }>;
-  specification: any;
+  name?: string;
+  description?: string;
 }
 
 export async function mvpCommand(options: MVPOptions) {
   console.log(chalk.bold.cyan('\n🚀 Welcome to Overnight MVP Builder!\n'));
   console.log(chalk.gray('Let\'s turn your idea into a deployed application in under an hour.'));
-  console.log(chalk.gray('Start by describing your MVP idea in natural language.\n'));
-
-  const bedrockClient = new BedrockClient({ modelId: options.model });
-  const conversation: MVPConversation = {
-    messages: [],
-    specification: {}
-  };
-
-  let continueChat = true;
-
-  while (continueChat) {
-    const { userInput } = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'userInput',
-        message: chalk.cyan('You:'),
-        validate: (input) => input.trim().length > 0 || 'Please enter a description'
-      }
-    ]);
-
-    if (userInput.toLowerCase() === 'done' || userInput.toLowerCase() === 'exit') {
-      continueChat = false;
-      break;
-    }
-
-    conversation.messages.push({ role: 'user', content: userInput });
-
-    const spinner = ora('Thinking...').start();
-
-    try {
-      const systemPrompt = await generateSystemPrompt(conversation);
-      const response = await bedrockClient.chat(
-        systemPrompt + '\n\nUser: ' + userInput,
-        false
-      );
-
-      spinner.stop();
-      
-      console.log(chalk.green('\nAssistant:'), response);
-      conversation.messages.push({ role: 'assistant', content: response });
-
-      const { action } = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'action',
-          message: '\nWhat would you like to do?',
-          choices: [
-            { name: 'Continue refining the MVP', value: 'continue' },
-            { name: 'Generate specification and proceed', value: 'generate' },
-            { name: 'Start over', value: 'restart' },
-            { name: 'Exit', value: 'exit' }
-          ]
-        }
-      ]);
-
-      switch (action) {
-        case 'generate':
-          await generateSpecification(conversation, bedrockClient, options.output || 'bigspec.yaml');
-          continueChat = false;
-          break;
-        case 'restart':
-          conversation.messages = [];
-          console.log(chalk.yellow('\n📝 Starting fresh. Describe your MVP idea:\n'));
-          break;
-        case 'exit':
-          continueChat = false;
-          break;
-      }
-
-    } catch (error) {
-      spinner.fail(chalk.red('Error communicating with AI'));
-      console.error(error);
-    }
-  }
-}
-
-async function generateSystemPrompt(conversation: MVPConversation): Promise<string> {
-  const conversationContext = conversation.messages
-    .map(m => `${m.role}: ${m.content}`)
-    .join('\n\n');
-
-  return `You are an expert MVP consultant helping users define their Minimum Viable Product.
-Your goal is to extract key requirements and help shape ideas into concrete specifications.
-
-Guidelines:
-1. Ask clarifying questions about features, users, and technical requirements
-2. Suggest practical MVP scope that can be built quickly
-3. Focus on core functionality that delivers immediate value
-4. Consider frontend UI/UX needs and backend API requirements
-5. Think about deployment and scalability from the start
-
-Current conversation:
-${conversationContext}
-
-Provide helpful guidance to refine the MVP idea. Be concise but thorough.`;
-}
-
-async function generateSpecification(
-  conversation: MVPConversation,
-  bedrockClient: BedrockClient,
-  outputFile: string
-) {
-  const spinner = ora('Generating MVP specification...').start();
+  console.log(chalk.gray('I\'ll help you create a comprehensive MVP specification.\n'));
 
   try {
-    const specPrompt = `Based on our conversation, generate a detailed MVP specification in YAML format that matches this exact structure:
+    // Get MVP name
+    let mvpName: string;
+    if (options.name) {
+      mvpName = options.name;
+      console.log(chalk.gray(`MVP Name: ${mvpName}`));
+    } else {
+      const nameAnswer = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'mvpName',
+          message: chalk.cyan('What is the name of your MVP?'),
+          validate: (input) => {
+            if (input.trim().length === 0) return 'Please enter a name';
+            if (input.trim().length > 50) return 'Name should be less than 50 characters';
+            return true;
+          }
+        }
+      ]);
+      mvpName = nameAnswer.mvpName;
+    }
 
-name: [Project Name]
-description: [Brief project description]
-features:
-  - name: [Feature Name]
-    description: [Feature description]
-    endpoints:
-      - method: [GET/POST/PUT/DELETE]
-        path: [/resource or /resource/{id}]
-        description: [What this endpoint does]
-      # Add more endpoints as needed
-  # Add more features as needed
-data_model:
-  [model_name]:
-    - id: string
-    - [field_name]: [field_type]
-    # Add more fields
-  # Add more models as needed
-ui_requirements:
-  - [UI requirement description]
-  # Add more UI requirements
-technical_requirements:
-  - [Technical requirement]
-  # Add more technical requirements
-
-Guidelines:
-1. Extract all core features from the conversation
-2. For each feature, define clear REST API endpoints
-3. Create a normalized data model with proper field types
-4. List specific UI/UX requirements mentioned
-5. Include any technical constraints or preferences
-6. Keep descriptions concise but comprehensive
-7. Use lowercase for model names, camelCase for field names
-8. Common field types: string, number, boolean, timestamp, array, object
-
-Conversation:
-${conversation.messages.map(m => `${m.role}: ${m.content}`).join('\n\n')}
-
-Generate a complete bigspec.yaml following the exact format above:`;
-
-    const specification = await bedrockClient.chat(specPrompt, false);
+    // Parse name to create directory
+    const mvpDirName = parseMVPName(mvpName);
+    const mvpDir = path.join(process.cwd(), 'mvps', mvpDirName);
     
-    await writeFile(outputFile, specification);
-    
-    spinner.succeed(chalk.green(`✅ MVP specification saved to ${outputFile}`));
-    
-    console.log(chalk.bold.cyan('\n📋 Next Steps:'));
-    console.log(chalk.gray('1. Review the bigspec in ' + outputFile));
-    console.log(chalk.gray('2. Run: make frontend MVP=' + path.basename(path.dirname(outputFile))));
-    console.log(chalk.gray('3. Run: make backend MVP=' + path.basename(path.dirname(outputFile))));
-    console.log(chalk.gray('4. Use the generated prompts with Lovable.dev and Amazon Q\n'));
+    // Check if MVP already exists
+    if (existsSync(mvpDir) && existsSync(path.join(mvpDir, 'mvpspec.yml'))) {
+      const { overwrite } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'overwrite',
+          message: chalk.yellow(`MVP '${mvpDirName}' already exists. Overwrite?`),
+          default: false
+        }
+      ]);
+      
+      if (!overwrite) {
+        console.log(chalk.gray('MVP creation cancelled.'));
+        return;
+      }
+    }
+
+    // Get MVP description
+    let mvpDescription: string;
+    if (options.description) {
+      mvpDescription = options.description;
+      console.log(chalk.gray(`Description: ${mvpDescription}`));
+    } else {
+      const descAnswer = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'mvpDescription',
+          message: chalk.cyan('Describe your MVP idea in a few sentences:'),
+          validate: (input) => {
+            if (input.trim().length === 0) return 'Please enter a description';
+            if (input.trim().length < 20) return 'Please provide a more detailed description (at least 20 characters)';
+            return true;
+          }
+        }
+      ]);
+      mvpDescription = descAnswer.mvpDescription;
+    }
+
+    // Create MVP directory and prompts subdirectory
+    await mkdir(mvpDir, { recursive: true });
+    const promptsDir = path.join(mvpDir, 'prompts');
+    await mkdir(promptsDir, { recursive: true });
+
+    const spinner = ora('Generating MVP specification...').start();
+
+    try {
+      const bedrockClient = new BedrockClient({ modelId: options.model });
+      
+      // Load template
+      const templatePath = path.join(process.cwd(), 'templates', 'example-mvp-spec.yaml');
+      const templateContent = await readFile(templatePath, 'utf-8');
+      
+      // Generate the prompt
+      const prompt = createMVPPrompt(mvpName, mvpDescription, templateContent);
+      
+      // Save the prompt first
+      const mvpPromptPath = path.join(promptsDir, 'make_mvp.txt');
+      await writeFile(mvpPromptPath, prompt);
+      
+      // Generate specification using AI
+      const specification = await bedrockClient.chat(prompt, false);
+      const cleanedSpec = specification
+        .replace(/```yaml\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      // Save specification
+      const outputPath = path.join(mvpDir, 'mvpspec.yml');
+      await writeFile(outputPath, cleanedSpec);
+      
+      spinner.succeed(chalk.green(`✅ MVP specification saved to ${outputPath}`));
+      
+      console.log(chalk.bold.cyan('\n📋 Next Steps:'));
+      console.log(chalk.gray(`1. Review the specification in ${outputPath}`));
+      console.log(chalk.gray(`2. Run: make frontend`));
+      console.log(chalk.gray(`3. Run: make backend`));
+      console.log(chalk.gray('4. Use the generated prompts with Lovable.dev and Amazon Q\n'));
+
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to generate specification'));
+      throw error;
+    }
 
   } catch (error) {
-    spinner.fail(chalk.red('Failed to generate specification'));
-    throw error;
+    console.error(chalk.red('\n❌ Error:'), error);
+    process.exit(1);
   }
 }
+
+function createMVPPrompt(
+  name: string,
+  description: string,
+  template: string
+): string {
+  
+  const prompt = `You are an expert MVP consultant. Generate a comprehensive MVP specification based on the following:
+
+MVP Name: ${name}
+MVP Description: ${description}
+
+Use this YAML template as a guide for the structure and format:
+
+${template}
+
+Generate a complete MVP specification that:
+1. Expands the description into concrete features
+2. Defines clear REST API endpoints for each feature
+3. Creates a normalized data model with proper relationships
+4. Lists specific UI pages and components needed
+5. Includes relevant technical requirements
+6. Focuses on MVP scope - essential features only
+
+Important formatting rules:
+- Use the exact YAML structure from the template
+- Keep feature names concise (2-3 words)
+- Use lowercase for model names, camelCase for field names
+- Include realistic field types: string, number, boolean, timestamp, array, object
+- Make sure all endpoints follow RESTful conventions
+- Include user stories that match the features
+
+Return ONLY the YAML specification, no additional text or explanation.`;
+
+  return prompt;
+}
+
+// Import readFile from fs/promises
+import { readFile } from 'fs/promises';

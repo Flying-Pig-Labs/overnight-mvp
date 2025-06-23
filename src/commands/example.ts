@@ -15,31 +15,42 @@ export async function exampleCommand(options: ExampleOptions) {
   const spinner = ora('Creating example MVP files...').start();
 
   try {
-    // Ensure output directory exists
+    // Ensure output directory and prompts subdirectory exist
     await mkdir(options.outputDir, { recursive: true });
+    const promptsDir = path.join(options.outputDir, 'prompts');
+    await mkdir(promptsDir, { recursive: true });
 
     // Generate all example files
-    const bigSpec = getExampleBigSpec();
+    const mvpSpec = getExampleMVPSpec();
     const frontSpec = getExampleFrontSpec();
     const backSpec = getExampleBackSpec();
-    const frontendPrompt = getExampleFrontendPrompt(bigSpec, frontSpec);
-    const backendPrompt = getExampleBackendPrompt(bigSpec, backSpec);
+    const frontendPrompt = getExampleFrontendPrompt(mvpSpec, frontSpec);
+    const backendPrompt = getExampleBackendPrompt(mvpSpec, backSpec);
 
     // Save all files
-    await writeFile(path.join(options.outputDir, 'bigspec.yaml'), yaml.stringify(bigSpec));
-    await writeFile(path.join(options.outputDir, 'frontspec.yaml'), yaml.stringify(frontSpec));
-    await writeFile(path.join(options.outputDir, 'backspec.yaml'), yaml.stringify(backSpec));
+    await writeFile(path.join(options.outputDir, 'mvpspec.yml'), yaml.stringify(mvpSpec));
+    await writeFile(path.join(options.outputDir, 'frontspec.yml'), yaml.stringify(frontSpec));
+    await writeFile(path.join(options.outputDir, 'backspec.yml'), yaml.stringify(backSpec));
     await writeFile(path.join(options.outputDir, 'frontend-prompt.txt'), frontendPrompt);
     await writeFile(path.join(options.outputDir, 'backend-prompt.txt'), backendPrompt);
+    
+    // Save example prompts to prompts directory
+    const mvpPrompt = getExampleMVPPrompt();
+    await writeFile(path.join(promptsDir, 'make_mvp.txt'), mvpPrompt);
+    await writeFile(path.join(promptsDir, 'make_frontend.txt'), frontendPrompt);
+    await writeFile(path.join(promptsDir, 'make_backend.txt'), backendPrompt);
 
     spinner.succeed(chalk.green('✅ Example MVP generated successfully!'));
     
     console.log(chalk.bold.cyan('\n📁 Generated Files:'));
-    console.log(chalk.gray(`- ${options.outputDir}/bigspec.yaml`));
-    console.log(chalk.gray(`- ${options.outputDir}/frontspec.yaml`));
-    console.log(chalk.gray(`- ${options.outputDir}/backspec.yaml`));
+    console.log(chalk.gray(`- ${options.outputDir}/mvpspec.yml`));
+    console.log(chalk.gray(`- ${options.outputDir}/frontspec.yml`));
+    console.log(chalk.gray(`- ${options.outputDir}/backspec.yml`));
     console.log(chalk.gray(`- ${options.outputDir}/frontend-prompt.txt`));
     console.log(chalk.gray(`- ${options.outputDir}/backend-prompt.txt`));
+    console.log(chalk.gray(`- ${options.outputDir}/prompts/make_mvp.txt`));
+    console.log(chalk.gray(`- ${options.outputDir}/prompts/make_frontend.txt`));
+    console.log(chalk.gray(`- ${options.outputDir}/prompts/make_backend.txt`));
     
     console.log(chalk.bold.cyan('\n🎯 Example MVP: Task Tracker'));
     console.log(chalk.gray('A simple but complete task management application featuring:'));
@@ -56,7 +67,7 @@ export async function exampleCommand(options: ExampleOptions) {
   }
 }
 
-function getExampleBigSpec() {
+function getExampleMVPSpec() {
   return {
     name: 'Task Tracker MVP',
     description: 'A simple task tracking application for personal productivity',
@@ -434,174 +445,231 @@ function getExampleBackSpec() {
   };
 }
 
-function getExampleFrontendPrompt(bigSpec: any, frontSpec: any): string {
-  return `# Task Tracker MVP - Frontend Implementation
+function getExampleFrontendPrompt(mvpSpec: any, frontSpec: any): string {
+  return `# Context
 
-Create a modern, responsive task tracking application with the following specifications:
+You are a senior AI application engineer using Lovable to build a complete, production-ready application frontend.
 
-## Project Overview
-A simple task tracking application for personal productivity
+Below this prompt is a full specification file called \`mvpspec.yml\` that serves as your Knowledge Base and single source of truth. It contains the project's overview, features, API endpoints, data models, UI requirements, and technical constraints.
 
-## Design Requirements
+## Task
 
-### Visual Design & Feel
-- **Vibe**: clean and professional
-- **Emotions**: Users should feel focused, accomplished, organized
+Build the complete frontend application described in \`mvpspec.yml\` from scratch in Lovable, with all API calls properly stubbed for a backend that doesn't exist yet.
+
+### Guidelines
+
+**Tech Stack Requirements:**
+- Frontend Framework: React + TypeScript (strict mode)
+- Styling: Tailwind CSS + shadcn/ui components
+- State Management: Use appropriate solution (Zustand/Context API)
+- Build Tool: Vite
+- API Client: Axios or Fetch API
+
+**Backend Architecture (Already Decided):**
+- The backend will be AWS Lambda + DynamoDB + API Gateway
+- Do NOT suggest alternative backend architectures
+- Do NOT implement any backend code
+- Focus exclusively on the frontend implementation
+
+**Development Approach:**
+1. Start by parsing the \`mvpspec.yml\` and summarizing the application
+2. Scaffold the base layout and navigation structure
+3. Create all pages and routes based on UI requirements
+4. Implement components progressively from layout → containers → features
+5. Wire up all API calls with proper error handling
+6. Ensure mobile-first, responsive design throughout
+
+#### Constraints
+
+**API Implementation Requirements:**
+- Make REAL HTTP calls to placeholder endpoints (e.g., \`http://localhost:3001/api/...\`)
+- All API calls will initially fail with 404 errors - this is expected
+- When any API call fails, show a toast/notification bubble with: "API not implemented yet: [Action Name]"
+- Use a toast library (react-hot-toast or similar) for notifications
+- Handle errors gracefully without breaking the UI flow
+- Structure request payloads exactly as the backend will expect them
+- Include proper headers (Content-Type, etc.)
+- Show loading states during API calls
+
+**Example API Implementation:**
+\`\`\`typescript
+const createTask = async (taskData: TaskData) => {
+  try {
+    setLoading(true);
+    const response = await axios.post('http://localhost:3001/api/tasks', taskData);
+    return response.data;
+  } catch (error) {
+    toast.error('API not implemented yet: Creating task');
+    // Optionally return mock data to keep UI functional
+    return { id: 'mock-id', ...taskData };
+  } finally {
+    setLoading(false);
+  }
+};
+\`\`\`
+
+**Strict Requirements:**
+- Do NOT invent features not in the specification
+- Do NOT modify field names, endpoints, or data types
+- Do NOT implement authentication unless specified
+- Do NOT create backend code or serverless functions
+- Maintain clean separation of concerns
+- Follow the exact URL patterns from the spec
+
+# Instructions
+
+1. First, parse and understand the complete \`mvpspec.yml\` below
+2. Create a clear mental model of the application's structure
+3. Build the frontend systematically, starting with layout and navigation
+4. Implement all features with proper API stubs as described above
+5. Ensure the UI is polished, responsive, and production-ready
+
+## Design Specifications
+
+**Visual Design Requirements:**
 - **Style**: Minimal & Clean
-- **Color Scheme**: blue primary with neutral grays
+- **Color Palette**: blue primary with neutral grays
 - **Target Audience**: Productivity-focused individuals
+- **Brand Personality**: clean and professional
+- **User Emotions**: focused, accomplished, organized
 
-### Interactions & Animations
-- Smooth animations and transitions throughout
-- Micro-interactions on all interactive elements
+**Interaction Design:**
+- Smooth animations and transitions on all interactions
+- Rich micro-interactions (hover effects, loading states, transitions)
 - **Interface Complexity**: balanced
+- Error states should be friendly and helpful
+- Success states should be celebratory but professional
 
-## Technical Stack
-- **Framework**: React with TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Build Tool**: Vite
-- **Type Safety**: TypeScript with strict mode
+## MVP Specification
 
-## Features to Implement
-
-### Task Management
-Create, read, update, and delete tasks
-
-**API Endpoints:**
-- POST /tasks - Create a new task
-- GET /tasks - List all tasks with optional filtering
-- GET /tasks/{id} - Get a specific task
-- PUT /tasks/{id} - Update a task
-- DELETE /tasks/{id} - Delete a task
-
-### Task Categories
-Organize tasks by categories
-
-**API Endpoints:**
-- GET /categories - List all categories
-- POST /categories - Create a new category
-- PUT /categories/{id} - Update a category
-- DELETE /categories/{id} - Delete a category
-
-## Pages & Routes
-
-- **Dashboard** (/): Overview with task statistics and quick actions
-- **Tasks** (/tasks): Complete task list with filtering and sorting
-- **Task Detail** (/tasks/:id): Detailed view and edit form for a single task
-- **Categories** (/categories): Manage task categories
-- **Settings** (/settings): User preferences and app settings
-
-## Components Structure
-
-### Container Components
-- **TaskList**: Displays tasks with filtering and sorting options
-
-### Display Components
-- **TaskCard**: Individual task display with quick actions
-- **StatsWidget**: Shows task completion statistics
-
-### Form Components
-- **TaskForm**: Create and edit tasks
-
-### Input Components
-- **CategoryPicker**: Select or create categories
-
-### Control Components
-- **FilterBar**: Filter tasks by status, category, date
-
-### Layout Components
-- **Header**: App header with navigation and user menu
-- **Sidebar**: Navigation sidebar with category list
-
-## State Management
-
-Using Zustand for state management with the following stores:
-
-### taskStore
-- State: tasks, filters, sorting, loading
-- Actions: fetchTasks, createTask, updateTask, deleteTask, setFilter, setSorting
-
-### categoryStore
-- State: categories, selectedCategory
-- Actions: fetchCategories, createCategory, updateCategory, deleteCategory, selectCategory
-
-### uiStore
-- State: darkMode, sidebarOpen, notifications
-- Actions: toggleDarkMode, toggleSidebar, addNotification, removeNotification
-
-## API Integration
-
-Base URL: \`process.env.REACT_APP_API_URL\`
-
-- POST /tasks (Task Management)
-- GET /tasks (Task Management)
-- GET /tasks/{id} (Task Management)
-- PUT /tasks/{id} (Task Management)
-- DELETE /tasks/{id} (Task Management)
-- GET /categories (Task Categories)
-- POST /categories (Task Categories)
-- PUT /categories/{id} (Task Categories)
-- DELETE /categories/{id} (Task Categories)
-
-## UI/UX Requirements
-
-1. **Responsive Design**
-   - Mobile-first approach
-   - Breakpoints: 640px (mobile), 768px (tablet), 1024px (desktop)
-   
-2. **Accessibility**
-   - WCAG 2.1 AA compliance
-   - Keyboard navigation support
-   - Screen reader friendly
-   
-3. **Performance**
-   - Lazy loading for routes
-   - Image optimization
-   - Code splitting by route
-
-4. **Error Handling**
-   - User-friendly error messages
-   - Retry mechanisms for failed requests
-   - Offline state handling
-
-## Additional Features
-
-- Task filtering by status, category, and date range
-- Sorting by priority, due date, or creation date
-- Bulk actions (mark multiple as complete, delete multiple)
-- Quick task creation with minimal fields
-- Keyboard shortcuts for power users
-- Export tasks to CSV format
-- Dark mode toggle
-- Task statistics dashboard
-- Due date reminders
-- Search functionality
-
-## Styling Guidelines
-
-1. Use Tailwind CSS utility classes
-2. Create custom components for repeated patterns
-3. Implement a consistent spacing system
-4. Use CSS variables for theme values
-5. Support dark mode with Tailwind's dark: modifier
-
-## Development Setup
-
-Please create a complete, production-ready application with:
-- All pages and components fully implemented
-- Complete TypeScript types
-- Error boundaries and loading states
-- Form validation with Zod or Yup
-- Responsive design for all screen sizes
-- Clean, maintainable code structure
-- Proper accessibility attributes
-- Performance optimizations
-
-The application should be immediately usable and visually polished, matching the design requirements specified above.`;
+\`\`\`yaml
+${yaml.stringify(mvpSpec)}
+\`\`\``;
 }
 
-function getExampleBackendPrompt(bigSpec: any, backSpec: any): string {
+function getExampleMVPPrompt(): string {
+  return `You are an expert MVP consultant. Generate a comprehensive MVP specification based on the following:
+
+MVP Name: Task Tracker MVP
+MVP Description: A simple task tracking application for personal productivity
+
+Use this YAML template as a guide for the structure and format:
+
+name: task-tracker
+description: A simple task management application for teams
+features:
+  - Create and manage tasks
+  - Assign tasks to team members
+  - Track task progress
+  - Due date reminders
+  - Team collaboration
+userStories:
+  - As a user, I want to create tasks so I can track my work
+  - As a manager, I want to assign tasks to team members
+  - As a team member, I want to see my assigned tasks
+  - As a user, I want to mark tasks as complete
+frontend:
+  pages:
+    - Dashboard
+    - Task List
+    - Task Detail
+    - Team Members
+    - Settings
+  components:
+    - TaskCard
+    - TaskForm
+    - UserAvatar
+    - ProgressBar
+    - DatePicker
+  styling:
+    theme: modern
+    primaryColor: "#3B82F6"
+    framework: Tailwind CSS
+backend:
+  apis:
+    - path: /api/tasks
+      method: GET
+      description: Get all tasks
+    - path: /api/tasks
+      method: POST
+      description: Create a new task
+    - path: /api/tasks/:id
+      method: PUT
+      description: Update a task
+    - path: /api/tasks/:id
+      method: DELETE
+      description: Delete a task
+    - path: /api/users
+      method: GET
+      description: Get all users
+    - path: /api/auth/login
+      method: POST
+      description: User login
+  dataModels:
+    - name: Task
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: title
+          type: string
+          required: true
+        - name: description
+          type: string
+          required: false
+        - name: assignee
+          type: string
+          required: false
+        - name: dueDate
+          type: date
+          required: false
+        - name: status
+          type: string
+          required: true
+    - name: User
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: name
+          type: string
+          required: true
+        - name: email
+          type: string
+          required: true
+        - name: role
+          type: string
+          required: true
+  integrations:
+    - AWS Cognito for authentication
+    - AWS SES for email notifications
+deployment:
+  hosting: AWS
+  domain: task-tracker.example.com
+  scaling:
+    initial: minimal
+    target: 1000 users
+
+Generate a complete MVP specification that:
+1. Expands the description into concrete features
+2. Defines clear REST API endpoints for each feature
+3. Creates a normalized data model with proper relationships
+4. Lists specific UI pages and components needed
+5. Includes relevant technical requirements
+6. Focuses on MVP scope - essential features only
+
+Important formatting rules:
+- Use the exact YAML structure from the template
+- Keep feature names concise (2-3 words)
+- Use lowercase for model names, camelCase for field names
+- Include realistic field types: string, number, boolean, timestamp, array, object
+- Make sure all endpoints follow RESTful conventions
+- Include user stories that match the features
+
+Return ONLY the YAML specification, no additional text or explanation.`;
+}
+
+function getExampleBackendPrompt(mvpSpec: any, backSpec: any): string {
   return `# Task Tracker MVP - Serverless Backend Implementation
 
 Create a production-ready serverless backend using AWS Lambda, DynamoDB, and API Gateway.

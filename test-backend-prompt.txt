@@ -1,0 +1,258 @@
+# Task Tracker MVP - Serverless Backend Implementation
+
+Create a production-ready serverless backend using AWS Lambda, DynamoDB, and API Gateway.
+
+## Project Overview
+A simple task tracking application for personal productivity
+
+## Architecture Requirements
+
+### Core Technologies
+- **Runtime**: Node.js 20.x
+- **Database**: DynamoDB
+- **API**: REST API Gateway
+- **IaC**: AWS SAM
+- **Monitoring**: CloudWatch
+- **Tracing**: X-Ray
+
+### DynamoDB Tables
+
+#### Tasks Table
+- **Partition Key**: userId (String)
+- **Sort Key**: taskId (String)
+- **Attributes**: 
+  - title (string)
+  - description (string)
+  - completed (boolean)
+  - priority (string)
+  - dueDate (string)
+  - categoryId (string)
+  - createdAt (timestamp)
+  - updatedAt (timestamp)
+- **Global Secondary Indexes**:
+  - CategoryIndex: PK=categoryId, SK=createdAt
+
+#### Categorys Table
+- **Partition Key**: userId (String)
+- **Sort Key**: categoryId (String)
+- **Attributes**: 
+  - name (string)
+  - color (string)
+  - icon (string)
+  - createdAt (timestamp)
+
+
+### Lambda Functions
+
+#### CreateTaskManagement
+- **Handler**: handlers/taskmanagement.createTaskManagement
+- **HTTP Method**: POST
+- **Path**: /tasks
+- **Description**: Create a new task
+- **Environment Variables**:
+  - TABLE_NAME: TaskManagements
+
+#### ListTaskManagements
+- **Handler**: handlers/taskmanagement.listTaskManagements
+- **HTTP Method**: GET
+- **Path**: /tasks
+- **Description**: List all tasks with optional filtering
+- **Environment Variables**:
+  - TABLE_NAME: TaskManagements
+
+#### GetTaskManagement
+- **Handler**: handlers/taskmanagement.getTaskManagement
+- **HTTP Method**: GET
+- **Path**: /tasks/{id}
+- **Description**: Get a specific task
+- **Environment Variables**:
+  - TABLE_NAME: TaskManagements
+
+#### UpdateTaskManagement
+- **Handler**: handlers/taskmanagement.updateTaskManagement
+- **HTTP Method**: PUT
+- **Path**: /tasks/{id}
+- **Description**: Update a task
+- **Environment Variables**:
+  - TABLE_NAME: TaskManagements
+
+#### DeleteTaskManagement
+- **Handler**: handlers/taskmanagement.deleteTaskManagement
+- **HTTP Method**: DELETE
+- **Path**: /tasks/{id}
+- **Description**: Delete a task
+- **Environment Variables**:
+  - TABLE_NAME: TaskManagements
+
+#### ListTaskCategoriess
+- **Handler**: handlers/taskcategories.listTaskCategoriess
+- **HTTP Method**: GET
+- **Path**: /categories
+- **Description**: List all categories
+- **Environment Variables**:
+  - TABLE_NAME: TaskCategoriess
+
+#### CreateTaskCategories
+- **Handler**: handlers/taskcategories.createTaskCategories
+- **HTTP Method**: POST
+- **Path**: /categories
+- **Description**: Create a new category
+- **Environment Variables**:
+  - TABLE_NAME: TaskCategoriess
+
+#### UpdateTaskCategories
+- **Handler**: handlers/taskcategories.updateTaskCategories
+- **HTTP Method**: PUT
+- **Path**: /categories/{id}
+- **Description**: Update a category
+- **Environment Variables**:
+  - TABLE_NAME: TaskCategoriess
+
+#### DeleteTaskCategories
+- **Handler**: handlers/taskcategories.deleteTaskCategories
+- **HTTP Method**: DELETE
+- **Path**: /categories/{id}
+- **Description**: Delete a category
+- **Environment Variables**:
+  - TABLE_NAME: TaskCategoriess
+
+### API Gateway Configuration
+
+- **Type**: REST
+- **CORS**: Enabled for all origins
+- **Authorization**: API Key
+- **Rate Limiting**: 1000 requests/second
+- **Burst Limit**: 2000 requests
+
+## Implementation Requirements
+
+### 1. Project Structure
+```
+backend/
+├── template.yaml          # SAM template
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── handlers/         # Lambda function handlers
+│   ├── services/         # Business logic
+│   ├── models/           # Data models
+│   ├── utils/            # Shared utilities
+│   └── types/            # TypeScript types
+└── tests/                # Unit and integration tests
+```
+
+### 2. Lambda Function Implementation
+
+Each Lambda function should:
+- Use TypeScript for type safety
+- Implement proper error handling with meaningful error messages
+- Include input validation using a library like Joi or Zod
+- Return consistent response formats
+- Include correlation IDs for request tracing
+- Implement proper logging using structured logs
+
+### 3. DynamoDB Best Practices
+
+- Use single-table design where appropriate
+- Implement optimistic locking for updates
+- Use batch operations for bulk actions
+- Implement proper pagination using LastEvaluatedKey
+- Design partition keys to avoid hot partitions
+- Use transactions for atomic operations
+
+### 4. Security Requirements
+
+- Implement least-privilege IAM roles
+- Use environment variables for configuration
+- Enable API Gateway request validation
+- Implement rate limiting per API key
+- Use AWS Secrets Manager for sensitive data
+- Enable AWS WAF for additional protection
+
+### 5. Error Handling
+
+Implement consistent error responses:
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "The requested resource was not found",
+    "details": {...},
+    "correlationId": "uuid"
+  }
+}
+```
+
+### 6. Monitoring & Observability
+
+- CloudWatch Logs for all Lambda functions
+- Custom CloudWatch metrics for business KPIs
+- X-Ray tracing for performance monitoring
+- CloudWatch alarms for error rates and latencies
+- Structured logging with JSON format
+
+### 7. Testing Strategy
+
+- Unit tests for all business logic
+- Integration tests for API endpoints
+- Load testing configuration
+- Local testing with SAM CLI
+
+### 8. Deployment Configuration
+
+Include in template.yaml:
+- API Gateway stage variables
+- Lambda environment configurations
+- DynamoDB provisioned throughput settings
+- CloudWatch log retention policies
+- API usage plans and API keys
+
+### 9. Sample Code Structure
+
+For each Lambda handler:
+```typescript
+import { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+export const handler: APIGatewayProxyHandler = async (event) => {
+  // Implementation
+};
+```
+
+## Features to Implement
+
+### Task Management
+Create, read, update, and delete tasks
+
+**Required Endpoints:**
+- POST /tasks - Create a new task
+- GET /tasks - List all tasks with optional filtering
+- GET /tasks/{id} - Get a specific task
+- PUT /tasks/{id} - Update a task
+- DELETE /tasks/{id} - Delete a task
+
+### Task Categories
+Organize tasks by categories
+
+**Required Endpoints:**
+- GET /categories - List all categories
+- POST /categories - Create a new category
+- PUT /categories/{id} - Update a category
+- DELETE /categories/{id} - Delete a category
+
+## Deliverables
+
+1. Complete SAM template (template.yaml)
+2. All Lambda function implementations
+3. DynamoDB table definitions
+4. API Gateway configuration
+5. IAM roles and policies
+6. Environment configuration files
+7. Deployment scripts
+8. README with setup instructions
+
+Please generate a complete, production-ready serverless backend that can be deployed immediately using SAM CLI.
