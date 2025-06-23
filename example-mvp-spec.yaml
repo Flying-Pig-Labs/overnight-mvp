@@ -1,0 +1,94 @@
+name: task-tracker
+description: A simple task management application for teams
+features:
+  - Create and manage tasks
+  - Assign tasks to team members
+  - Track task progress
+  - Due date reminders
+  - Team collaboration
+userStories:
+  - As a user, I want to create tasks so I can track my work
+  - As a manager, I want to assign tasks to team members
+  - As a team member, I want to see my assigned tasks
+  - As a user, I want to mark tasks as complete
+frontend:
+  pages:
+    - Dashboard
+    - Task List
+    - Task Detail
+    - Team Members
+    - Settings
+  components:
+    - TaskCard
+    - TaskForm
+    - UserAvatar
+    - ProgressBar
+    - DatePicker
+  styling:
+    theme: modern
+    primaryColor: "#3B82F6"
+    framework: Tailwind CSS
+backend:
+  apis:
+    - path: /api/tasks
+      method: GET
+      description: Get all tasks
+    - path: /api/tasks
+      method: POST
+      description: Create a new task
+    - path: /api/tasks/:id
+      method: PUT
+      description: Update a task
+    - path: /api/tasks/:id
+      method: DELETE
+      description: Delete a task
+    - path: /api/users
+      method: GET
+      description: Get all users
+    - path: /api/auth/login
+      method: POST
+      description: User login
+  dataModels:
+    - name: Task
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: title
+          type: string
+          required: true
+        - name: description
+          type: string
+          required: false
+        - name: assignee
+          type: string
+          required: false
+        - name: dueDate
+          type: date
+          required: false
+        - name: status
+          type: string
+          required: true
+    - name: User
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: name
+          type: string
+          required: true
+        - name: email
+          type: string
+          required: true
+        - name: role
+          type: string
+          required: true
+  integrations:
+    - AWS Cognito for authentication
+    - AWS SES for email notifications
+deployment:
+  hosting: AWS
+  domain: task-tracker.example.com
+  scaling:
+    initial: minimal
+    target: 1000 users
