@@ -19,7 +19,7 @@ make build
 
 # Create your MVP
 make mvp                                     # Describe your idea interactively
-make frontend SPEC=bigspec.yaml              # Generate frontend implementation
+make frontend                                # Generate frontend implementation
 make backend SPEC=bigspec.yaml               # Generate backend implementation
 make s3-site REPO=github.com/you/your-app   # Deploy to AWS
 ```
@@ -77,7 +77,7 @@ make setup-aws  # Verify AWS access
 | Command | Purpose |
 |---------|---------|
 | `make mvp` | Start interactive MVP builder |
-| `make frontend SPEC=file` | Generate frontend implementation |
+| `make frontend` | Generate frontend implementation |
 | `make backend SPEC=file` | Generate backend implementation |
 | `make s3-site REPO=url` | Generate AWS deployment |
 | `make example` | Create example MVP with all specs |
