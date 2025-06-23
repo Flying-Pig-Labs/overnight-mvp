@@ -31,19 +31,25 @@ make s3-site REPO=github.com/you/your-app   # Deploy to AWS
 make mvp
 # Or: overnight-mvp mvp -o mvp-spec.yaml
 ```
-Interactive session to capture your requirements → `bigspec.yaml`
+Interactive session to capture your requirements → `mvpspec.yml`
+
+**⚠️ Important:** After generation, review and edit the `mvpspec.yml` file to ensure:
+- All features are correctly captured
+- Data models match your needs  
+- API endpoints are properly defined
+- Technical requirements are accurate
 
 ### 2️⃣ Generate Frontend
 ```bash
-make frontend SPEC=bigspec.yaml
-# Or: overnight-mvp frontend bigspec.yaml -o frontend-prompt.txt
+make frontend SPEC=mvpspec.yml
+# Or: overnight-mvp frontend mvpspec.yml -o frontend-prompt.txt
 ```
 Interactive design session + implementation prompt → `frontend-prompt.txt`
 
 ### 3️⃣ Generate Backend
 ```bash
-make backend SPEC=bigspec.yaml
-# Or: overnight-mvp backend bigspec.yaml -o backend-prompt.txt
+make backend SPEC=mvpspec.yml
+# Or: overnight-mvp backend mvpspec.yml -o backend-prompt.txt
 ```
 AWS Lambda + DynamoDB implementation → `backend-prompt.txt`
 
@@ -107,12 +113,14 @@ Building a task tracker:
 make mvp
 > "I need a task tracker for teams with projects and deadlines"
 
+# Review and edit the generated mvpspec.yml file
+
 # 2. Generate frontend
-make frontend SPEC=bigspec.yaml
+make frontend SPEC=mvpspec.yml
 # → Interactive design session, then copy prompt to Claude Code
 
 # 3. Generate backend
-make backend SPEC=bigspec.yaml
+make backend SPEC=mvpspec.yml
 # → Copy prompt to Claude Code for AWS Lambda implementation
 
 # 4. Deploy
@@ -129,7 +137,7 @@ make s3-site REPO=https://github.com/you/task-tracker
 make example
 
 # Run full workflow automatically
-overnight-mvp run bigspec.yaml
+overnight-mvp run mvpspec.yml
 
 # Analyze existing frontend for API needs
 overnight-mvp analyze ./frontend -o api-spec.yaml

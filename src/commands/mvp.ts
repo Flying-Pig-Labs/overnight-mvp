@@ -118,8 +118,17 @@ export async function mvpCommand(options: MVPOptions) {
       
       spinner.succeed(chalk.green(`✅ MVP specification saved to ${outputPath}`));
       
-      console.log(chalk.bold.cyan('\n📋 Next Steps:'));
-      console.log(chalk.gray(`1. Review the specification in ${outputPath}`));
+      console.log(chalk.bold.yellow('\n⚠️  IMPORTANT: Review Your MVP Specification'));
+      console.log(chalk.yellow(`Please open and review: ${outputPath}`));
+      console.log(chalk.gray('The AI-generated specification may need adjustments to match your vision.'));
+      console.log(chalk.gray('Take a moment to:'));
+      console.log(chalk.gray('  • Check that all features are correctly captured'));
+      console.log(chalk.gray('  • Verify the data models match your needs'));
+      console.log(chalk.gray('  • Ensure API endpoints are properly defined'));
+      console.log(chalk.gray('  • Adjust any technical requirements\n'));
+      
+      console.log(chalk.bold.cyan('📋 Next Steps:'));
+      console.log(chalk.gray(`1. Review and edit the specification in ${outputPath}`));
       console.log(chalk.gray(`2. Run: make frontend`));
       console.log(chalk.gray(`3. Run: make backend`));
       console.log(chalk.gray('4. Use the generated prompts with Lovable.dev and Amazon Q\n'));
