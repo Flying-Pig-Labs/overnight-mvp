@@ -4,11 +4,11 @@
 
 ## ✨ What is this?
 
-A streamlined CLI that orchestrates AI tools to build and deploy full-stack applications:
+A powerful CLI that orchestrates AI tools to build and deploy full-stack applications:
 
 1. **💬 Describe** your idea in plain English
-2. **🎨 Generate** a frontend with Lovable.dev
-3. **☁️ Deploy** to AWS S3/CloudFront with one command
+2. **🎨 Generate** frontend and backend implementations
+3. **☁️ Deploy** to AWS with automated infrastructure
 
 ## 🎯 Quick Start
 
@@ -18,30 +18,41 @@ npm install
 make build
 
 # Create your MVP
-make chat                                    # Describe your idea
-make lovable SPEC=mvp-spec.yaml             # Generate frontend prompt
-make s3-site REPO=github.com/you/your-app   # Generate deployment
+make mvp                                     # Describe your idea interactively
+make frontend SPEC=bigspec.yaml              # Generate frontend implementation
+make backend SPEC=bigspec.yaml               # Generate backend implementation
+make s3-site REPO=github.com/you/your-app   # Deploy to AWS
 ```
 
 ## 📋 Complete Workflow
 
 ### 1️⃣ Define Your MVP
 ```bash
-make chat
+make mvp
+# Or: overnight-mvp mvp -o mvp-spec.yaml
 ```
-Interactive session to capture your requirements → `mvp-spec.yaml`
+Interactive session to capture your requirements → `bigspec.yaml`
 
 ### 2️⃣ Generate Frontend
 ```bash
-make lovable SPEC=mvp-spec.yaml
+make frontend SPEC=bigspec.yaml
+# Or: overnight-mvp frontend bigspec.yaml -o frontend-prompt.txt
 ```
-Creates optimized Lovable.dev prompt → `lovable-prompt.txt`
+Interactive design session + implementation prompt → `frontend-prompt.txt`
 
-### 3️⃣ Deploy to AWS
+### 3️⃣ Generate Backend
+```bash
+make backend SPEC=bigspec.yaml
+# Or: overnight-mvp backend bigspec.yaml -o backend-prompt.txt
+```
+AWS Lambda + DynamoDB implementation → `backend-prompt.txt`
+
+### 4️⃣ Deploy to AWS
 ```bash
 make s3-site REPO=https://github.com/you/frontend
+# Or: overnight-mvp s3-site -r https://github.com/you/frontend
 ```
-Generates complete AWS infrastructure → `s3-deployment-prompt.txt`
+Complete AWS infrastructure deployment → `s3-deployment-prompt.txt`
 
 ## 🛠️ Setup
 
@@ -59,17 +70,32 @@ make setup-aws  # Verify AWS access
 
 | Command | Purpose |
 |---------|---------|
-| `make chat` | Start interactive MVP builder |
-| `make lovable SPEC=file` | Generate Lovable.dev prompt |
+| `make mvp` | Start interactive MVP builder |
+| `make frontend SPEC=file` | Generate frontend implementation |
+| `make backend SPEC=file` | Generate backend implementation |
 | `make s3-site REPO=url` | Generate AWS deployment |
+| `make example` | Create example MVP with all specs |
 | `make help` | Show all commands |
+
+### CLI Commands
+| Command | Purpose |
+|---------|---------|
+| `overnight-mvp mvp` | Interactive MVP specification builder |
+| `overnight-mvp frontend <spec>` | Generate frontend with design session |
+| `overnight-mvp backend <spec>` | Generate AWS Lambda backend |
+| `overnight-mvp lovable <spec>` | Generate Lovable.dev prompt |
+| `overnight-mvp s3-site` | Generate S3/CloudFront deployment |
+| `overnight-mvp run <spec>` | Run complete workflow |
+| `overnight-mvp analyze <path>` | Extract API requirements |
+| `overnight-mvp deploy <path>` | Deploy to AWS |
+| `overnight-mvp example` | Generate example project |
 
 ## 🏗️ Architecture
 
 ```
-Idea → Chat → Spec → Lovable → GitHub → S3/CloudFront → Live App
-         ↓      ↓        ↓         ↓          ↓
-       AI    YAML    Frontend   Code    Infrastructure
+Idea → MVP → Spec → Frontend/Backend → GitHub → AWS → Live App
+        ↓      ↓         ↓               ↓        ↓
+      AI    YAML    Implementations   Code   Infrastructure
 ```
 
 ## 💡 Example
@@ -78,18 +104,38 @@ Building a task tracker:
 
 ```bash
 # 1. Describe your idea
-make chat
+make mvp
 > "I need a task tracker for teams with projects and deadlines"
 
 # 2. Generate frontend
-make lovable SPEC=mvp-spec.yaml
-# → Copy prompt to lovable.dev
+make frontend SPEC=bigspec.yaml
+# → Interactive design session, then copy prompt to Claude Code
 
-# 3. Deploy
+# 3. Generate backend
+make backend SPEC=bigspec.yaml
+# → Copy prompt to Claude Code for AWS Lambda implementation
+
+# 4. Deploy
 make s3-site REPO=https://github.com/you/task-tracker
-# → Paste prompt to Claude Code
+# → Deploy infrastructure with Claude Code
 
-# Result: Live app at https://your-app.cloudfront.net
+# Result: Live full-stack app at https://your-app.cloudfront.net
+```
+
+## 🚀 Advanced Usage
+
+```bash
+# Generate complete example project
+make example
+
+# Run full workflow automatically
+overnight-mvp run bigspec.yaml
+
+# Analyze existing frontend for API needs
+overnight-mvp analyze ./frontend -o api-spec.yaml
+
+# Deploy with specific stage
+overnight-mvp deploy ./project --stage prod
 ```
 
 ## 🤝 Contributing
