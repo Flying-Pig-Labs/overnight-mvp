@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { mvpCommand } from './commands/mvp.js';
-import { s3SiteCommand } from './commands/s3-site.js';
+import { integrationCommand } from './commands/integration.js';
 import { frontendCommand } from './commands/frontend.js';
 import { backendCommand } from './commands/backend.js';
 import { exampleCommand } from './commands/example.js';
@@ -26,12 +26,11 @@ program
 
 
 program
-  .command('s3-site')
-  .description('Generate CloudFront/S3 deployment instructions for a GitHub repo')
-  .option('-r, --repo <url>', 'GitHub repository URL', '')
-  .option('-o, --output <file>', 'Save the prompt to a file', 's3-deployment-prompt.txt')
-  .option('--copy', 'Copy the prompt to clipboard')
-  .action(s3SiteCommand);
+  .command('integration')
+  .description('Generate integration prompt for connecting frontend to backend with deployment')
+  .option('-o, --output <file>', 'Save the prompt to a file')
+  .option('--shortname <shortname>')
+  .action(integrationCommand);
 
 program
   .command('frontend')
@@ -60,18 +59,19 @@ ${chalk.bold('Examples:')}
   $ overnight-mvp mvp                     # Start interactive MVP builder
   $ overnight-mvp frontend                # Generate frontend (interactive selection)
   $ overnight-mvp backend                 # Generate backend (interactive selection)
-  $ overnight-mvp s3-site --repo <url>    # Generate S3/CloudFront deployment
+  $ overnight-mvp integration             # Generate integration deployment prompt
 
 ${chalk.bold('Workflow Steps:')}
   1. ${chalk.cyan('MVP')} - Create MVP specification with name and description
   2. ${chalk.cyan('Frontend')} - Design and generate frontend with Lovable.dev
   3. ${chalk.cyan('Backend')} - Generate backend with AWS Q Developer
-  4. ${chalk.cyan('Deploy')} - Deploy using generated infrastructure code
+  4. ${chalk.cyan('Integration')} - Connect frontend to backend with deployment setup
 
 ${chalk.bold('Using Make Commands:')}
   $ make mvp                              # Create new MVP specification
   $ make frontend                         # Generate frontend (interactive)
   $ make backend                          # Generate backend (interactive)
+  $ make integration                      # Generate integration deployment prompt
 `);
 
 program.parse();

@@ -16,15 +16,21 @@ Tell the AI what you want to build. Be specific about features.
 
 ### 2. Generate Frontend (5 min)
 ```bash
-make lovable SPEC=mvp-spec.yaml
+make frontend
 ```
-Copy the prompt → Paste into [lovable.dev](https://lovable.dev) → Download code
+Interactive design session → Copy prompt → Paste into [lovable.dev](https://lovable.dev)
 
-### 3. Deploy to AWS (5 min)
+### 3. Generate Backend (5 min)
 ```bash
-make s3-site REPO=https://github.com/you/your-app
+make backend
 ```
-Copy the prompt → Paste into Claude Code → Follow instructions
+Copy the prompt → Paste into Amazon Q Developer → Deploy backend
+
+### 4. Connect & Deploy (5 min)
+```bash
+make integration
+```
+Copy the prompt → Paste into Claude Code → Connect frontend to backend & deploy
 
 ## 🎉 Done!
 

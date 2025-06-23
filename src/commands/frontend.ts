@@ -31,7 +31,8 @@ export async function frontendCommand(options: FrontendOptions) {
     const availableMVPs = await listAvailableMVPs();
     const nonExampleMVPs = availableMVPs.filter(mvp => mvp !== 'example-mvp');
     
-    if (nonExampleMVPs.length === 0) {
+    // Skip the check if using --shortname (allows testing with example-mvp)
+    if (!options.shortname && nonExampleMVPs.length === 0) {
       console.log(chalk.yellow('No MVPs found. Please run "make mvp" first to create an MVP.'));
       return;
     }
@@ -39,10 +40,11 @@ export async function frontendCommand(options: FrontendOptions) {
     // Select MVP
     let selectedMVP: string;
     if (options.shortname) {
-      if (!nonExampleMVPs.includes(options.shortname)) {
+      // When using shortname, check against all MVPs (including example-mvp)
+      if (!availableMVPs.includes(options.shortname)) {
         console.error(chalk.red(`MVP '${options.shortname}' not found.`));
         console.log(chalk.gray('Available MVPs:'));
-        nonExampleMVPs.forEach(mvp => console.log(chalk.gray(`  - ${mvp}`)));
+        availableMVPs.forEach(mvp => console.log(chalk.gray(`  - ${mvp}`)));
         return;
       }
       selectedMVP = options.shortname;

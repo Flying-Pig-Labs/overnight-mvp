@@ -25,7 +25,7 @@ help:
 	@echo "Workflow Commands:"
 	@echo "  make frontend     Generate frontend with interactive prompts"
 	@echo "  make backend      Generate backend with Amazon Q"
-	@echo "  make s3-site REPO=github.com/.. Generate S3 deployment prompt"
+	@echo "  make integration  Generate integration prompt for frontend/backend deployment"
 	@echo ""
 	@echo "Setup Commands:"
 	@echo "  make setup-aws    Configure AWS credentials"
@@ -110,15 +110,10 @@ backend: build
 	@echo "⚙️  Starting backend generation with Amazon Q..."
 	@AWS_PROFILE=personal node ./dist/cli.js backend
 
-# Generate S3/CloudFront deployment prompt from GitHub repo
-s3-site:
-	@echo "☁️  Generating S3/CloudFront deployment prompt..."
-	@if [ -z "$(REPO)" ]; then \
-		echo "❌ Please provide a GitHub repo URL: make s3-site REPO=https://github.com/user/repo"; \
-		exit 1; \
-	fi
-	@echo "📝 Creating deployment prompt for $(REPO)..."
-	@AWS_PROFILE=personal node ./dist/cli.js s3-site --repo $(REPO)
+# Generate integration prompt for frontend/backend deployment
+integration: build
+	@echo "🔗 Generating integration deployment prompt..."
+	@AWS_PROFILE=personal node ./dist/cli.js integration
 
 # Regenerate example MVP
 example: build

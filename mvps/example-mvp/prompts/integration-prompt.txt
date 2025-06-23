@@ -1,0 +1,120 @@
+I have a frontend application that needs to be integrated with a deployed AWS backend and then deployed to AWS S3/CloudFront.
+
+## Context
+
+**Application**: Task Tracker MVP
+**Description**: A simple task tracking application for personal productivity
+**Frontend Repository**: https://github.com/[owner]/task-tracker-mvp
+
+## Backend Details (Already Deployed)
+
+The backend has been deployed with the following specifications:
+
+### API Gateway
+- **Base URL**: https://abc123xyz.execute-api.us-east-1.amazonaws.com/prod
+- **Region**: us-east-1
+- **Authentication**: apiKey
+- **API Key Header**: x-api-key
+
+### Lambda Functions
+- **CreateTaskManagement**: POST /tasks
+- **ListTaskManagements**: GET /tasks
+- **GetTaskManagement**: GET /tasks/{id}
+- **UpdateTaskManagement**: PUT /tasks/{id}
+- **DeleteTaskManagement**: DELETE /tasks/{id}
+- **ListTaskCategoriess**: GET /categories
+- **CreateTaskCategories**: POST /categories
+- **UpdateTaskCategories**: PUT /categories/{id}
+- **DeleteTaskCategories**: DELETE /categories/{id}
+
+### DynamoDB Tables
+- **Tasks**: PK=userId, SK=taskId
+- **Categorys**: PK=userId, SK=categoryId
+
+## Tasks
+
+### 1. Update Frontend to Use Real Backend
+
+Update all API calls in the frontend to:
+- Use the actual API Gateway URL: https://abc123xyz.execute-api.us-east-1.amazonaws.com/prod
+- Include proper authentication headers
+- Handle CORS properly
+- Update environment variables
+
+**Required Changes:**
+- Update `.env` or environment configuration
+- Modify all API client configurations
+- Test all endpoints to ensure they work with the real backend
+
+### 2. Deploy Frontend to AWS S3/CloudFront
+
+Create AWS CDK infrastructure for:
+
+#### S3 Bucket Configuration
+- Private bucket (no public access)
+- Configured for static website hosting
+- Proper bucket policies for CloudFront access
+
+#### CloudFront Distribution
+- Origin Access Control (OAC) for secure S3 access
+- Custom error pages for SPA routing (404 → index.html)
+- HTTPS only
+- Caching optimization for static assets
+- Compression enabled
+- Use existing distribution if needed: d1234567890.cloudfront.net
+
+#### Build and Deployment
+- Detect the frontend framework (React/Vite, Next.js, etc.)
+- Set up proper build commands
+- Configure environment variables:
+  - VITE_API_URL=https://abc123xyz.execute-api.us-east-1.amazonaws.com/prod
+  - VITE_API_KEY=[SECURE_API_KEY]
+- Create deployment scripts
+
+#### GitHub Actions Workflow
+- Trigger on push to main branch
+- Build the frontend application
+- Upload to S3 using `aws s3 sync`
+- Invalidate CloudFront cache
+- Support for staging/production environments
+
+## Project Structure Expected
+
+```
+task-tracker-mvp/
+├── cdk/
+│   ├── bin/
+│   │   └── app.ts
+│   ├── lib/
+│   │   └── frontend-stack.ts
+│   ├── cdk.json
+│   └── package.json
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── scripts/
+│   └── deploy.sh
+├── .env.example
+└── README.md (with setup instructions)
+```
+
+## Implementation Notes
+
+1. **Environment Variables**: 
+   - Ensure all API URLs point to the real backend
+   - Use GitHub Secrets for sensitive values like API keys
+   
+2. **CORS Configuration**:
+   - The backend should already have CORS configured
+   - Frontend should send proper headers
+
+3. **Error Handling**:
+   - Remove any mock data returns
+   - Implement proper error states for failed API calls
+
+4. **Testing**:
+   - Test each endpoint integration
+   - Verify authentication works correctly
+   - Check error handling
+
+Please analyze the repository, update the frontend to use the real backend, and create all necessary files for S3/CloudFront deployment.

@@ -1,0 +1,12 @@
+apiGateway:
+  url: https://abc123xyz.execute-api.us-east-1.amazonaws.com
+  stage: prod
+  region: us-east-1
+cloudFront:
+  distributionId: E1234567890ABC
+  domainName: d1234567890.cloudfront.net
+authentication:
+  type: apiKey
+  details:
+    headerName: x-api-key
+    apiKey: example-api-key-123456

@@ -21,7 +21,7 @@ make build
 make mvp                                     # Describe your idea interactively
 make frontend                                # Generate frontend implementation
 make backend                                 # Generate backend implementation
-make s3-site REPO=github.com/you/your-app   # Deploy to AWS
+make integration                             # Connect frontend to backend & deploy
 ```
 
 ## 📋 Complete Workflow
@@ -53,12 +53,14 @@ make backend
 ```
 AWS Lambda + DynamoDB implementation → `backend-prompt.txt`
 
-### 4️⃣ Deploy to AWS
+### 4️⃣ Integrate & Deploy
 ```bash
-make s3-site REPO=https://github.com/you/frontend
-# Or: overnight-mvp s3-site -r https://github.com/you/frontend
+make integration
+# Or: overnight-mvp integration
 ```
-Complete AWS infrastructure deployment → `s3-deployment-prompt.txt`
+Connects frontend to backend and generates deployment instructions → `integration-prompt.txt`
+
+**Note:** The backend networking details are read from `networking-spec.yaml` which should be populated after backend deployment.
 
 ## 🛠️ Setup
 
@@ -79,7 +81,7 @@ make setup-aws  # Verify AWS access
 | `make mvp` | Start interactive MVP builder |
 | `make frontend` | Generate frontend implementation |
 | `make backend` | Generate backend implementation |
-| `make s3-site REPO=url` | Generate AWS deployment |
+| `make integration` | Generate integration & deployment prompt |
 | `make example` | Create example MVP with all specs |
 | `make help` | Show all commands |
 
@@ -88,10 +90,8 @@ make setup-aws  # Verify AWS access
 |---------|---------|
 | `overnight-mvp mvp` | Interactive MVP specification builder |
 | `overnight-mvp frontend <spec>` | Generate frontend with design session |
-| `overnight-mvp backend <spec>` | Generate AWS Lambda backend |
-| `overnight-mvp lovable <spec>` | Generate Lovable.dev prompt |
-| `overnight-mvp s3-site` | Generate S3/CloudFront deployment |
-| `overnight-mvp run <spec>` | Run complete workflow |
+| `overnight-mvp backend` | Generate AWS Lambda backend |
+| `overnight-mvp integration` | Generate integration deployment prompt |
 | `overnight-mvp analyze <path>` | Extract API requirements |
 | `overnight-mvp deploy <path>` | Deploy to AWS |
 | `overnight-mvp example` | Generate example project |
@@ -123,9 +123,9 @@ make frontend
 make backend
 # → Copy prompt to Claude Code for AWS Lambda implementation
 
-# 4. Deploy
-make s3-site REPO=https://github.com/you/task-tracker
-# → Deploy infrastructure with Claude Code
+# 4. Integrate & Deploy
+make integration
+# → Connect frontend to backend and deploy with Claude Code
 
 # Result: Live full-stack app at https://your-app.cloudfront.net
 ```

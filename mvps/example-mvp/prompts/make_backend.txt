@@ -1,356 +1,57 @@
-# Task Tracker MVP - Serverless Backend Implementation
+# Prompt: Generate Backend Implementation with AWS Q Developer CLI
 
-Create a production-ready serverless backend using AWS Lambda, DynamoDB, and API Gateway.
+You are given a `backend-spec.json` that defines the full shape of required backend services and routes.
 
-## Project Overview
-A simple task tracking application for personal productivity
+Your job is to convert this structured specification into a natural language prompt that can be used with AWS Q Developer CLI to automatically generate and deploy the complete backend infrastructure.
 
-## Architecture Requirements
+## Tasks
 
-### Core Technologies
-- **Runtime**: Node.js 20.x
-- **Database**: DynamoDB
-- **API**: REST API Gateway
-- **IaC**: AWS SAM
-- **Monitoring**: CloudWatch
-- **Tracing**: X-Ray
+* Convert the backend-spec.json into a clear, natural language description
+* Include all required endpoints, methods, and data structures
+* Specify the desired technology stack (CDK + TypeScript, Lambda + Python)
+* Add requirements for security, validation, and best practices
+* Format the prompt for optimal Q CLI understanding
 
-### DynamoDB Tables
+## Output
 
-#### Tasks Table
-- **Partition Key**: userId (String)
-- **Sort Key**: taskId (String)
-- **Attributes**: 
-  - title (string)
-  - description (string)
-  - completed (boolean)
-  - priority (string)
-  - dueDate (string)
-  - createdAt (timestamp)
-  - updatedAt (timestamp)
-- **Global Secondary Indexes**:
-  - CategoryIndex: PK=categoryId, SK=createdAt
-  - StatusIndex: PK=completed, SK=dueDate
+Generate a Q CLI prompt like:
 
-#### Categories Table
-- **Partition Key**: userId (String)
-- **Sort Key**: categoryId (String)
-- **Attributes**: 
-  - name (string)
-  - color (string)
-  - icon (string)
-  - createdAt (timestamp)
-
-### Lambda Functions
-
-#### CreateTask
-- **Handler**: handlers/tasks.createTask
-- **HTTP Method**: POST
-- **Path**: /tasks
-- **Description**: Create a new task
-- **Environment Variables**:
-  - TABLE_NAME: Tasks
-
-#### ListTasks
-- **Handler**: handlers/tasks.listTasks
-- **HTTP Method**: GET
-- **Path**: /tasks
-- **Description**: List all tasks with optional filtering
-- **Environment Variables**:
-  - TABLE_NAME: Tasks
-
-#### GetTask
-- **Handler**: handlers/tasks.getTask
-- **HTTP Method**: GET
-- **Path**: /tasks/{id}
-- **Description**: Get a specific task
-- **Environment Variables**:
-  - TABLE_NAME: Tasks
-
-#### UpdateTask
-- **Handler**: handlers/tasks.updateTask
-- **HTTP Method**: PUT
-- **Path**: /tasks/{id}
-- **Description**: Update a task
-- **Environment Variables**:
-  - TABLE_NAME: Tasks
-
-#### DeleteTask
-- **Handler**: handlers/tasks.deleteTask
-- **HTTP Method**: DELETE
-- **Path**: /tasks/{id}
-- **Description**: Delete a task
-- **Environment Variables**:
-  - TABLE_NAME: Tasks
-
-#### ListCategories
-- **Handler**: handlers/categories.listCategories
-- **HTTP Method**: GET
-- **Path**: /categories
-- **Description**: List all categories
-- **Environment Variables**:
-  - TABLE_NAME: Categories
-
-#### CreateCategory
-- **Handler**: handlers/categories.createCategory
-- **HTTP Method**: POST
-- **Path**: /categories
-- **Description**: Create a new category
-- **Environment Variables**:
-  - TABLE_NAME: Categories
-
-#### UpdateCategory
-- **Handler**: handlers/categories.updateCategory
-- **HTTP Method**: PUT
-- **Path**: /categories/{id}
-- **Description**: Update a category
-- **Environment Variables**:
-  - TABLE_NAME: Categories
-
-#### DeleteCategory
-- **Handler**: handlers/categories.deleteCategory
-- **HTTP Method**: DELETE
-- **Path**: /categories/{id}
-- **Description**: Delete a category
-- **Environment Variables**:
-  - TABLE_NAME: Categories
-
-### API Gateway Configuration
-
-- **Type**: REST
-- **CORS**: Enabled for all origins
-- **Authorization**: API Key
-- **Rate Limiting**: 1000 requests/second
-- **Burst Limit**: 2000 requests
-
-## Implementation Requirements
-
-### 1. Project Structure
 ```
-backend/
-├── template.yaml          # SAM template
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── handlers/         # Lambda function handlers
-│   │   ├── tasks.ts
-│   │   └── categories.ts
-│   ├── services/         # Business logic
-│   │   ├── taskService.ts
-│   │   └── categoryService.ts
-│   ├── models/           # Data models
-│   │   ├── Task.ts
-│   │   └── Category.ts
-│   ├── utils/            # Shared utilities
-│   │   ├── dynamodb.ts
-│   │   ├── response.ts
-│   │   └── validation.ts
-│   └── types/            # TypeScript types
-│       └── index.ts
-└── tests/                # Unit and integration tests
+I want to build a serverless application with an API Gateway that has the following endpoints:
+
+1. POST /contact
+   - Accepts JSON payload: {name: string, email: string, message: string}
+   - Returns: {success: boolean, message: string}
+   - Purpose: Submit contact form
+
+2. GET /user
+   - Accepts: No payload
+   - Returns: {id: string, name: string, email: string}
+   - Purpose: Get current user profile
+
+3. POST /auth/login
+   - Accepts: {email: string, password: string}
+   - Returns: {token: string, user: object}
+   - Purpose: User authentication
+
+I want to build the AWS infrastructure using CDK in TypeScript and Lambda functions in Python.
+Include proper CORS configuration for frontend integration, input validation, error handling, and security best practices.
+Generate comprehensive documentation and OpenAPI specification.
 ```
 
-### 2. Lambda Function Implementation
+## Q CLI Integration Benefits
 
-Each Lambda function should:
-- Use TypeScript for type safety
-- Implement proper error handling with meaningful error messages
-- Include input validation using Zod
-- Return consistent response formats
-- Include correlation IDs for request tracing
-- Implement proper logging using structured logs
+* **Automated Generation**: Q CLI creates all CDK infrastructure code
+* **Best Practices**: Built-in security, validation, and error handling
+* **Rapid Deployment**: Complete backend deployed in minutes
+* **Consistent Architecture**: Follows AWS recommended patterns
+* **Documentation**: Auto-generated OpenAPI specs and deployment guides
 
-### 3. DynamoDB Best Practices
+## Usage Instructions
 
-- Use single-table design where appropriate
-- Implement optimistic locking for updates
-- Use batch operations for bulk actions
-- Implement proper pagination using LastEvaluatedKey
-- Design partition keys to avoid hot partitions
-- Use transactions for atomic operations
-
-### 4. Security Requirements
-
-- Implement least-privilege IAM roles
-- Use environment variables for configuration
-- Enable API Gateway request validation
-- Implement rate limiting per API key
-- Use AWS Secrets Manager for sensitive data
-- Enable AWS WAF for additional protection
-
-### 5. Error Handling
-
-Implement consistent error responses:
-```json
-{
-  "error": {
-    "code": "RESOURCE_NOT_FOUND",
-    "message": "The requested resource was not found",
-    "details": {...},
-    "correlationId": "uuid"
-  }
-}
-```
-
-### 6. Monitoring & Observability
-
-- CloudWatch Logs for all Lambda functions
-- Custom CloudWatch metrics for business KPIs
-- X-Ray tracing for performance monitoring
-- CloudWatch alarms for error rates and latencies
-- Structured logging with JSON format
-
-### 7. Testing Strategy
-
-- Unit tests for all business logic
-- Integration tests for API endpoints
-- Load testing configuration
-- Local testing with SAM CLI
-
-### 8. Deployment Configuration
-
-Include in template.yaml:
-- API Gateway stage variables
-- Lambda environment configurations
-- DynamoDB provisioned throughput settings
-- CloudWatch log retention policies
-- API usage plans and API keys
-
-### 9. Sample Implementation
-
-#### Task Handler Example:
-```typescript
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
-
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
-
-const CreateTaskSchema = z.object({
-  title: z.string().min(1).max(200),
-  description: z.string().optional(),
-  priority: z.enum(['low', 'medium', 'high']),
-  categoryId: z.string().uuid().optional(),
-  dueDate: z.string().datetime().optional()
-});
-
-export const createTask: APIGatewayProxyHandler = async (event) => {
-  const correlationId = event.headers['x-correlation-id'] || uuidv4();
-  
-  try {
-    const body = JSON.parse(event.body || '{}');
-    const validated = CreateTaskSchema.parse(body);
-    
-    const task = {
-      userId: event.requestContext.authorizer?.userId || 'anonymous',
-      taskId: uuidv4(),
-      ...validated,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    await docClient.send(new PutCommand({
-      TableName: process.env.TABLE_NAME,
-      Item: task
-    }));
-    
-    return {
-      statusCode: 201,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Correlation-Id': correlationId
-      },
-      body: JSON.stringify({ data: task })
-    };
-  } catch (error) {
-    console.error('Error creating task:', error);
-    
-    if (error instanceof z.ZodError) {
-      return {
-        statusCode: 400,
-        headers: { 'X-Correlation-Id': correlationId },
-        body: JSON.stringify({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid request data',
-            details: error.errors,
-            correlationId
-          }
-        })
-      };
-    }
-    
-    return {
-      statusCode: 500,
-      headers: { 'X-Correlation-Id': correlationId },
-      body: JSON.stringify({
-        error: {
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'An unexpected error occurred',
-          correlationId
-        }
-      })
-    };
-  }
-};
-```
-
-## Features to Implement
-
-### Task Management
-Create, read, update, and delete tasks
-
-**Required Endpoints:**
-- POST /tasks - Create a new task
-- GET /tasks - List all tasks with optional filtering
-- GET /tasks/{id} - Get a specific task
-- PUT /tasks/{id} - Update a task
-- DELETE /tasks/{id} - Delete a task
-
-### Task Categories
-Organize tasks by categories
-
-**Required Endpoints:**
-- GET /categories - List all categories
-- POST /categories - Create a new category
-- PUT /categories/{id} - Update a category
-- DELETE /categories/{id} - Delete a category
-
-## Additional Features to Implement
-
-1. **Filtering & Sorting**
-   - Filter tasks by category, status, priority, date range
-   - Sort by creation date, due date, priority
-   - Full-text search in task titles and descriptions
-
-2. **Bulk Operations**
-   - Bulk update task status
-   - Bulk delete tasks
-   - Bulk move tasks to different categories
-
-3. **Data Export**
-   - Export tasks to CSV format
-   - Export filtered task lists
-   - Include all task metadata in exports
-
-4. **Performance Optimizations**
-   - Implement caching strategies
-   - Use DynamoDB batch operations
-   - Optimize query patterns
-
-## Deliverables
-
-1. Complete SAM template (template.yaml)
-2. All Lambda function implementations
-3. DynamoDB table definitions
-4. API Gateway configuration
-5. IAM roles and policies
-6. Environment configuration files
-7. Deployment scripts
-8. README with setup instructions
-
-Please generate a complete, production-ready serverless backend that can be deployed immediately using SAM CLI.
+1. Generate the Q CLI prompt from backend-spec.json
+2. Run `q chat` in terminal
+3. Paste the generated prompt
+4. Follow Q CLI's interactive deployment process
+5. Extract generated OpenAPI spec and endpoint URLs
+6. Update frontend with real API endpoints 
